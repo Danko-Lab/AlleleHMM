@@ -1,4 +1,4 @@
-#python AlleleHMM.py autosome_num counts_hmm_plus.txt counts_hmm_minus.txt
+#python AlleleHMM.py prefix counts_plus_hmm.txt counts_minus_hmm.txt autosome_num
 import numpy as np
 from math import *
 import scipy.stats
@@ -14,12 +14,12 @@ import multiprocessing
 # comnined all autosome
 # combined plus trand and minus strand
 
-chromosome_num=int(argv[1]) # number of autosomes, excludes sex chromosomes
+prefix=argv[1] #"counts_hmm"
 counts_plus_hmm = argv[2] #"counts_plus_hmm.txt"
 counts_minus_hmm = argv[3] #"counts_minus_hmm.txt"
-prefix=counts_plus_hmm[0:-8]
+chromosome_num=int(argv[4]) # number of autosomes, excludes sex chromosomes
 
-# data
+#data
 # combine plus strand and minus strand info for user
 mat_1  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
 total_1 = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
@@ -361,7 +361,7 @@ def prediction():
 if __name__ == '__main__':
     t = time.time()
     try:
-        if argv[4]=="predict":
+        if argv[5]=="predict":
             prediction()
     except:
         run()
