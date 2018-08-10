@@ -166,7 +166,6 @@ def em_interate(T, p, x=mat, n=total):
     for i in xrange(len(x)):
         p_Y_l[0,i] = sumLogProb(sumLogProb(b_p_m[0,i]+f_p_m[0,i], b_p_m[1,i]+f_p_m[1, i]),b_p_m[2, i]+f_p_m[2, i])
     print "p_Y_l ", t- time.time()
-    #A = [[None, None, None], [None, None, None], [None, None, None]]
     A = np.zeros((3,3))
     new_P = [None, None, None] #P_m, P_s, P_p 
     
@@ -204,7 +203,6 @@ def em_interate_T_mp_fixed(T, p, x=mat, n=total, update_state=1):
     for i in xrange(len(x)):
         p_Y_l[0,i] = sumLogProb(sumLogProb(b_p_m[0,i]+f_p_m[0,i], b_p_m[1,i]+f_p_m[1, i]),b_p_m[2, i]+f_p_m[2, i])
     print "p_Y_l ", t- time.time()
-    #A = [[None, None, None], [None, None, None], [None, None, None]]
     A = np.zeros((3,3))
     new_P = [None, None, None] #P_m, P_s, P_p 
     
@@ -320,7 +318,7 @@ def run_em_T_mp_fixed(t):
         new_T_list.append(new_T)
         new_P_list.append(new_P)
     make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", f_int[0:-4]+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+".pdf")
-    make_em_plot(p_Y_f_list, "count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", f_int[0:-4]+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+"_15.pdf" ,15)
+    #make_em_plot(p_Y_f_list, "count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", f_int[0:-4]+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+"_15.pdf" ,15)
     with open(f_int[0:-4]+"_t="+str(t)+'_parameters.txt', 'w') as out:
         out.write("T="+str(new_T_list[-1])+"\n")
         out.write("P="+str(new_P_list[-1])+"\n")
@@ -338,32 +336,10 @@ def run():
         pool.close() # no more tasks
         pool.join()
         
-        ##for p in pool_output:
-        #for i in range(1,10):
-        #    t, new_T_list,new_P_list, _ = pool_output[i-1]
-        #    new_T = new_T_list[-1]
-        #    new_P = new_P_list[-1]
-        #    #print t
-        #    #print np.exp(new_T)
-        #    #print new_P
-        #    if counts_minus_hmm == "-":
-        #        hmm_prediction(counts_plus_hmm, " ", '1e-0'+str(i),new_T, new_P)
-        #    else:
-        #        hmm_prediction(counts_plus_hmm, "+", '1e-0'+str(i),new_T, new_P)
-        #        hmm_prediction(counts_minus_hmm, "-",'1e-0'+str(i),new_T, new_P)
     except: # in case pool doesn't work
         result=[]
         for i in range(1,10):
             result.append(run_em_T_mp_fixed(10**(-i)))
-        #for i in range(1,10):
-        #    t, new_T_list,new_P_list, _ = result[i-1]
-        #    new_T = new_T_list[-1]
-        #    new_P = new_P_list[-1]
-        #    if counts_minus_hmm == "-":
-        #        hmm_prediction(counts_plus_hmm, " ", '1e-0'+str(i),new_T, new_P)
-        #    else:
-        #        hmm_prediction(counts_plus_hmm, "+", '1e-0'+str(i),new_T, new_P)
-        #        hmm_prediction(counts_minus_hmm, "-",'1e-0'+str(i),new_T, new_P)
 
 
 
