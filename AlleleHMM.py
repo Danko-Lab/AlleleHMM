@@ -37,13 +37,11 @@ I_p=0.25
 
 ##transition
 # 0,1,2 = M, S, P
-t = 1e-05
-t_mm, t_ms, t_mp = 1-t, t/2, t/2
-t_sm, t_ss, t_sp = t/2, 1-t, t/2
-t_pm, t_ps, t_pp = t/2, t/2, 1-t
-
-
-T = np.log(np.array( [[t_mm, t_ms, t_mp],[t_sm, t_ss, t_sp],[t_pm, t_ps, t_pp]]))
+#t = 1e-05
+#t_mm, t_ms, t_mp = 1-t, t/2, t/2
+#t_sm, t_ss, t_sp = t/2, 1-t, t/2
+#t_pm, t_ps, t_pp = t/2, t/2, 1-t
+#T = np.log(np.array( [[t_mm, t_ms, t_mp],[t_sm, t_ss, t_sp],[t_pm, t_ps, t_pp]]))
 
 ## emmision
 p_m, p_s,p_p = 0.7, 0.5, 0.3
@@ -119,7 +117,7 @@ def sumLogProb(a, b):
 
 
 
-def forward_probability_calculation(x=mat, n=total, p=p, T=T):
+def forward_probability_calculation(x, n, p, T):
     f_p_m = np.full((3, len(x)), float('-inf'))
     # Initialization:
     f_p_m[0, 0] = log(I_m) + get_emission_log_prob(x[0],n[0],p[0])
@@ -136,10 +134,10 @@ def forward_probability_calculation(x=mat, n=total, p=p, T=T):
 
 
 
-def backward_probability_calculation(x=mat, n=total, p=p, T=T):
+def backward_probability_calculation(x, n, p, T):
     b_p_m = np.full((3, len(x)), float('-inf'))
     # Initialization:
-    b_p_m[0, len(x)-1] = log(1)  #???
+    b_p_m[0, len(x)-1] = log(1) 
     b_p_m[1, len(x)-1] = log(1)
     b_p_m[2, len(x)-1] = log(1)
     #Iteration
@@ -155,17 +153,17 @@ def backward_probability_calculation(x=mat, n=total, p=p, T=T):
 
 
 def em_interate(T, p, x=mat, n=total):
-    t = time.time()
+    #t = time.time()
     f_p_m, p_Y_f = forward_probability_calculation(x, n, p, T)
-    print "forward: ", t- time.time()
+    #print "forward: ", t- time.time()
     b_p_m, p_Y_b = backward_probability_calculation(x, n, p, T)
-    print "backward: ", t- time.time()
+    #print "backward: ", t- time.time()
     
     #local P(Y)
     p_Y_l = np.full((1, len(x)), float('-inf'))
     for i in xrange(len(x)):
         p_Y_l[0,i] = sumLogProb(sumLogProb(b_p_m[0,i]+f_p_m[0,i], b_p_m[1,i]+f_p_m[1, i]),b_p_m[2, i]+f_p_m[2, i])
-    print "p_Y_l ", t- time.time()
+    #print "p_Y_l ", t- time.time()
     A = np.zeros((3,3))
     new_P = [None, None, None] #P_m, P_s, P_p 
     
@@ -174,8 +172,7 @@ def em_interate(T, p, x=mat, n=total):
         for k in range(3):
             for l in range(3):
                 A[k,l] = A[k,l] + exp(f_p_m[k, i] + T[k,l] + get_emission_log_prob(x[i+1],n[i+1],p[l]) + b_p_m[l, i+1] - p_Y_l[0,i])
-    #A = np.array(A)
-    print "A : ", t- time.time()
+    #print "A : ", t- time.time()
     new_T = np.zeros((3,3))
     for k in range(3):
         new_P[k] = np.sum(np.exp(f_p_m[k,] + b_p_m[k,]-p_Y_l) * x ) / np.sum(np.exp(f_p_m[k,] + b_p_m[k,]-p_Y_l) * n ) 
@@ -185,24 +182,23 @@ def em_interate(T, p, x=mat, n=total):
     p2=new_P[2]
     new_P[0]= (p0+1-p2)/2.0
     new_P[2]= (p2+1-p0)/2.0
-    #new_p_Y_f = forward_probability_calculation(p= new_P, T=np.log(new_T))[1]
-    print "secs: ", t- time.time()
+    #print "secs: ", t- time.time()
     print new_T, new_P, p_Y_f
     return np.log(new_T), new_P, p_Y_f
 
 
 def em_interate_T_mp_fixed(T, p, x=mat, n=total, update_state=1):
-    t = time.time()
+    #t = time.time()
     f_p_m, p_Y_f = forward_probability_calculation(x, n, p, T)
-    print "forward: ", t- time.time()
+    #print "forward: ", t- time.time()
     b_p_m, p_Y_b = backward_probability_calculation(x, n, p, T)
-    print "backward: ", t- time.time()
+    #print "backward: ", t- time.time()
     
     #local P(Y)
     p_Y_l = np.full((1, len(x)), float('-inf'))
     for i in xrange(len(x)):
         p_Y_l[0,i] = sumLogProb(sumLogProb(b_p_m[0,i]+f_p_m[0,i], b_p_m[1,i]+f_p_m[1, i]),b_p_m[2, i]+f_p_m[2, i])
-    print "p_Y_l ", t- time.time()
+    #print "p_Y_l ", t- time.time()
     A = np.zeros((3,3))
     new_P = [None, None, None] #P_m, P_s, P_p 
     
@@ -211,8 +207,7 @@ def em_interate_T_mp_fixed(T, p, x=mat, n=total, update_state=1):
         for l in range(3):
             k=update_state
             A[k,l] = A[k,l] + exp(f_p_m[k, i] + T[k,l] + get_emission_log_prob(x[i+1],n[i+1],p[l]) + b_p_m[l, i+1] - p_Y_l[0,i])
-    #A = np.array(A)
-    print "A : ", t- time.time()
+    #print "A : ", t- time.time()
     for k in range(3):
         new_P[k] = np.sum(np.exp(f_p_m[k,] + b_p_m[k,]-p_Y_l) * x ) / np.sum(np.exp(f_p_m[k,] + b_p_m[k,]-p_Y_l) * n ) 
     # adjust so that p_m + p_p = 1
@@ -224,8 +219,7 @@ def em_interate_T_mp_fixed(T, p, x=mat, n=total, update_state=1):
     new_T = np.exp(T)
     k = update_state
     new_T[k] = A[k]/A[k].sum()
-    #new_p_Y_f = forward_probability_calculation(p= new_P, T=np.log(new_T))[1]
-    print "secs: ", t- time.time()
+    #print "secs: ", t- time.time()
     print new_T, new_P, p_Y_f
     return np.log(new_T), new_P, p_Y_f
 
@@ -239,14 +233,6 @@ def make_em_plot(em_p_Y_f_list, t, file_name='em_p_Y_f_list_plot.pdf', i=0):
     plt.savefig(file_name)
     plt.close()
 
-
-def hist(x, b=50, output_name = 'hist.pdf'):
-    hist, bins = np.histogram(x, bins=b)
-    width = 0.7 * (bins[1] - bins[0])
-    center = (bins[:-1] + bins[1:]) / 2
-    plt.bar(center, hist, align='center', width=width)
-    plt.savefig(output_name)
-    plt.close()
 
 ### input data for viterbi
 # seperate the autosome
@@ -270,14 +256,11 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
         f_data_dic[f_v]=[data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v]
     
     v_path=[]
-    #v_path_Tfixed=[]
     
     for i in xrange(1,chromosome_num+1):
         t_c = total_v[chrom_v == i]
         x_c = mat_v[chrom_v == i]
-        #snp_c = snppos[chrom == i]
         v_path += (list(viterbi (x=x_c, n=t_c, p=new_P, T=new_T)))
-        #v_path_Tfixed += (list(viterbi (x=x_c, n=t_c, p=new_P, T=T)))
     
     # output regions with neighbor sharing the same states as a bed file
     state_map = {0:'M', 1:'S', 2:'P'}
@@ -298,9 +281,8 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
             out.write('\t'.join(r+['111',strand]))
             out.write('\n')
 
-### run em
-### run em with Tmp fixed, Ts update
 
+### run em with Tmp fixed, Ts update
 def run_em_T_mp_fixed(t):
     t_mm, t_ms, t_mp = 1-t, t/2, t/2
     t_sm, t_ss, t_sp = t/2, 1-t, t/2
@@ -312,13 +294,12 @@ def run_em_T_mp_fixed(t):
     new_P_list = [new_P]
     max_iter = 30
     for i in xrange(max_iter):
-        print i
+        print "iteration",i
         new_T, new_P, p_Y_f = em_interate_T_mp_fixed(new_T, new_P, x=mat, n=total)
         p_Y_f_list.append(p_Y_f)
         new_T_list.append(new_T)
         new_P_list.append(new_P)
     make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", f_int[0:-4]+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+".pdf")
-    #make_em_plot(p_Y_f_list, "count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", f_int[0:-4]+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+"_15.pdf" ,15)
     with open(f_int[0:-4]+"_t="+str(t)+'_parameters.txt', 'w') as out:
         out.write("T="+str(new_T_list[-1])+"\n")
         out.write("P="+str(new_P_list[-1])+"\n")
@@ -346,17 +327,20 @@ def run():
 def prediction():
     for i in range(1,10):
         #print str(10**(-i))
+        print f_int[0:-4]+"_t="+str(10**(-i))+'_parameters.txt'
         with open(f_int[0:-4]+"_t="+str(10**(-i))+'_parameters.txt') as p_in:
             l=p_in.readlines()
-        print i
+        #print i
         T=[]
         for ll in l[0:3]:
             for lll in ll.strip().strip('T=').strip('[').strip(']').split():
-                print lll
+                #print lll
                 T.append(float(lll))
-            print T
+            #print T
         new_T=np.array(T).reshape(3,3)
         new_P=[float(ll) for ll in l[-1].strip().strip('P=').strip('[').strip(']').split(",")]
+        print "T", new_T
+        print "P", new_P
         if counts_minus_hmm == "-":
             hmm_prediction(counts_plus_hmm, " ", '1e-0'+str(i),new_T, new_P)
         else:
@@ -366,10 +350,11 @@ def prediction():
 
 
 if __name__ == '__main__':
+    t = time.time()
     try:
         if argv[5]=="predict":
             prediction()
     except:
         run()
         prediction()
-    
+    print "AlleleHMM Run finished:", time.time() -t , "secs"
