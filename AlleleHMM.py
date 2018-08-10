@@ -1,4 +1,4 @@
-#python AlleleHMM.py counts_hmm.txt counts_plus_hmm.txt counts_minus_hmm.txt autosome_num
+#python AlleleHMM.py autosome_num counts_hmm_plus.txt counts_hmm_minus.txt
 import numpy as np
 from math import *
 import scipy.stats
@@ -14,15 +14,24 @@ import multiprocessing
 # comnined all autosome
 # combined plus trand and minus strand
 
-f_int = argv[1] #"counts_hmm.txt"
+chromosome_num=int(argv[1]) # number of autosomes, excludes sex chromosomes
 counts_plus_hmm = argv[2] #"counts_plus_hmm.txt"
 counts_minus_hmm = argv[3] #"counts_minus_hmm.txt"
-chromosome_num=int(argv[4]) # number of autosomes, excludes sex chromosomes
+prefix=counts_plus_hmm[0:-8]
 
-#data
-mat  = np.loadtxt(f_int, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-total = np.loadtxt(f_int, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-state = np.loadtxt(f_int, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+# data
+# combine plus strand and minus strand info for user
+mat_1  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+total_1 = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+state_1 = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+
+mat_2  = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+total_2 = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+state_2 = np.loadtxt(counts_minus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+
+mat=np.concatenate((mat_1, mat_2))
+total=np.concatenate((total_1, total_2))
+state=np.concatenate((state_1, state_2))
 n_state = np.full(len(state), int(3), dtype=int)
 n_state[state=="M"] = 0
 n_state[state=="S"] = 1
@@ -299,8 +308,8 @@ def run_em_T_mp_fixed(t):
         p_Y_f_list.append(p_Y_f)
         new_T_list.append(new_T)
         new_P_list.append(new_P)
-    make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", f_int[0:-4]+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+".pdf")
-    with open(f_int[0:-4]+"_t="+str(t)+'_parameters.txt', 'w') as out:
+    make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", prefix+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+".pdf")
+    with open(prefix+"_t="+str(t)+'_parameters.txt', 'w') as out:
         out.write("T="+str(new_T_list[-1])+"\n")
         out.write("P="+str(new_P_list[-1])+"\n")
     return [t, new_T_list,new_P_list, p_Y_f_list]
@@ -327,8 +336,8 @@ def run():
 def prediction():
     for i in range(1,10):
         #print str(10**(-i))
-        print f_int[0:-4]+"_t="+str(10**(-i))+'_parameters.txt'
-        with open(f_int[0:-4]+"_t="+str(10**(-i))+'_parameters.txt') as p_in:
+        print prefix+"_t="+str(10**(-i))+'_parameters.txt'
+        with open(prefix+"_t="+str(10**(-i))+'_parameters.txt') as p_in:
             l=p_in.readlines()
         #print i
         T=[]
@@ -352,7 +361,7 @@ def prediction():
 if __name__ == '__main__':
     t = time.time()
     try:
-        if argv[5]=="predict":
+        if argv[4]=="predict":
             prediction()
     except:
         run()
