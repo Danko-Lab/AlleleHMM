@@ -26,9 +26,9 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
 
 
 ## Usage
-For strand-specific data such as PRO-seq, please prepared two files.
-+ counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
-+ counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
++ For strand-specific data such as PRO-seq, please prepared two files.
+  * counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
+  * counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
 + autosome_num: Human is 22, mouse is 19 
 
 ```````
