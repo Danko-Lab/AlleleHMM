@@ -42,7 +42,8 @@ python AlleleHMM.py GM12878_counts GM12878_counts_plus_hmm.txt GM12878_counts_mi
 
 + For non-strand-specific data such as ChIP-seq, please prepared one file.
 + prefix: prefix of the output files. 
-+ autosome_num: Human is 22, mouse is 19 
++ autosome_num: Human is 22, mouse is 19
+
 The following is an example for human H3K27me3 ChIP-seq data
 ```````
 python AlleleHMM.py H3K27me3_counts_hmm H3K27me3_counts_hmm.txt - 22
