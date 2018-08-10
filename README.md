@@ -7,7 +7,6 @@
 AlleleHMM takes allele-specific read counts file in the following formats, please notes that:
 + Please use tab delimited text file
 + Must have header at the first line and only the first line.
-+ chrm must be interger.
 + SNP position (snppos) must be sorted according to genomic location. 
 + Please see full example of counts_hmm.txt in input_file_exmaples folder.
 
