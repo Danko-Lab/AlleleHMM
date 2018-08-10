@@ -1,4 +1,4 @@
-#python AlleleHMM.py prefix counts_plus_hmm.txt counts_minus_hmm.txt autosome_num
+#python AlleleHMM.py prefix counts_plus_hmm.txt counts_minus_hmm.txt
 import numpy as np
 from math import *
 import scipy.stats
@@ -14,24 +14,30 @@ import multiprocessing
 # comnined all autosome
 # combined plus trand and minus strand
 
-prefix=argv[1] #"counts_hmm"
-counts_plus_hmm = argv[2] #"counts_plus_hmm.txt"
-counts_minus_hmm = argv[3] #"counts_minus_hmm.txt"
-chromosome_num=int(argv[4]) # number of autosomes, excludes sex chromosomes
+counts_plus_hmm = argv[1] #"counts_plus_hmm.txt"
+counts_minus_hmm = argv[2] #"counts_minus_hmm.txt"
+#chromosome_num=int(argv[4]) # number of autosomes, excludes sex chromosomes
+prefix= '_'.join([counts_plus_hmm.split("_")[0], "hmm"])
+
+
 
 #data
 # combine plus strand and minus strand info for user
-mat_1  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-total_1 = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-state_1 = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+if counts_minus_hmm == "-":
+    mat  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+    total = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+    state = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+else:
+    mat_1  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+    total_1 = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+    state_1 = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+    mat_2  = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+    total_2 = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+    state_2 = np.loadtxt(counts_minus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+    mat=np.concatenate((mat_1, mat_2))
+    total=np.concatenate((total_1, total_2))
+    state=np.concatenate((state_1, state_2))
 
-mat_2  = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-total_2 = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-state_2 = np.loadtxt(counts_minus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
-
-mat=np.concatenate((mat_1, mat_2))
-total=np.concatenate((total_1, total_2))
-state=np.concatenate((state_1, state_2))
 n_state = np.full(len(state), int(3), dtype=int)
 n_state[state=="M"] = 0
 n_state[state=="S"] = 1
@@ -253,7 +259,7 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
         data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v = f_data_dic[f_v]
     else:
         data_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=range(0,6), skiprows=1)
-        chrom_v = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[0], skiprows=1)
+        chrom_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[0], skiprows=1)
         snppos_v = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[1], skiprows=1)
         mat_v  = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
         total_v = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
@@ -265,8 +271,10 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
         f_data_dic[f_v]=[data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v]
     
     v_path=[]
+    chrom_list= list(set(chrom_v))
+    chrom_list.sort()
     
-    for i in xrange(1,chromosome_num+1):
+    for i in chrom_list:
         t_c = total_v[chrom_v == i]
         x_c = mat_v[chrom_v == i]
         v_path += (list(viterbi (x=x_c, n=t_c, p=new_P, T=new_T)))
@@ -274,7 +282,7 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
     # output regions with neighbor sharing the same states as a bed file
     state_map = {0:'M', 1:'S', 2:'P'}
     region_list=[]
-    for c in xrange(1,chromosome_num+1):
+    for c in chrom_list:
         snppos_c = snppos_v[chrom_v == c]
         v_path_c = np.array(v_path)[chrom_v == c]
         u = snppos_c[0]
@@ -361,7 +369,7 @@ def prediction():
 if __name__ == '__main__':
     t = time.time()
     try:
-        if argv[5]=="predict":
+        if argv[4]=="predict":
             prediction()
     except:
         run()
