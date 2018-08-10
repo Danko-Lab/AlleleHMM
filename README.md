@@ -26,18 +26,17 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
 
 
 ## Usage
+
+```````
+python AlleleHMM.py counts_plus_hmm.txt counts_minus_hmm.txt
+```````
 + For strand-specific data such as PRO-seq, please prepared two files.
   * counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
   * counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
-+ prefix: prefix of the output files. 
-+ autosome_num: Human is 22, mouse is 19 
 
-```````
-python AlleleHMM.py prefix counts_plus_hmm.txt counts_minus_hmm.txt autosome_num
-```````
 The following is an example for human PRO-seq data
 ```````
-python AlleleHMM.py GM12878_counts GM12878_counts_plus_hmm.txt GM12878_counts_minus_hmm.txt 22
+python AlleleHMM.py counts_plus_hmm.txt counts_minus_hmm.txt
 ```````
 
 + For non-strand-specific data such as ChIP-seq, please prepared one file.
@@ -45,6 +44,6 @@ python AlleleHMM.py GM12878_counts GM12878_counts_plus_hmm.txt GM12878_counts_mi
 
 The following is an example for human H3K27me3 ChIP-seq data
 ```````
-python AlleleHMM.py H3K27me3_counts_hmm H3K27me3_counts_hmm.txt - 22
+python AlleleHMM.py H3K27me3_counts_hmm.txt -
 ```````
   
