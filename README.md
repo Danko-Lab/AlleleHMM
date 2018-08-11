@@ -1,5 +1,5 @@
 # AlleleHMM
-
+AlleleHMM takes allele-specific read counts file as input, will run HMM with 9 values of tao (0.1, 0.01,..., 1e-09), then output bed files of predicted states.
 
 
 ## Input files
@@ -37,3 +37,7 @@ python AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt
 python AlleleHMM.py -i counts_hmm.txt
 ```````
   
+
+## Output files
++ counts_hmm_t=1e-05_parameters.txt: Transition probability and emission probablity
++ counts_hmm_regions_t1e-05.bed, counts_plus_hmm_regions_t1e-05.bed, counts_minus_hmm_regions_t1e-05.bed: bed files with predicted allele-specificities.
