@@ -39,5 +39,5 @@ python AlleleHMM.py -i counts_hmm.txt
   
 
 ## Output files
-+ counts_hmm_t=1e-05_parameters.txt: Transition probability and emission probablity
 + counts_hmm_regions_t1e-05.bed, counts_plus_hmm_regions_t1e-05.bed, counts_minus_hmm_regions_t1e-05.bed: genomic regions with predicted allele-specificities.
++ counts_hmm_t=1e-05_parameters.txt: Optimized transition probability and emission probablity using AlleleHMM. They are used to predict the allele-specificities of genomic regions.
