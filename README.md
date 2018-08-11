@@ -26,23 +26,14 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
 
 ## Usage
 
-```````
-python AlleleHMM.py counts_plus_hmm.txt counts_minus_hmm.txt
-```````
 + For strand-specific data such as PRO-seq, please prepare two files.
   * counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
   * counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
-
-The following is an example for human PRO-seq data
 ```````
-python AlleleHMM.py counts_plus_hmm.txt counts_minus_hmm.txt
+python AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt
 ```````
-
-+ For non-strand-specific data such as ChIP-seq, please prepare one file.
-+ Please put "-" to replace the second file.
-
-The following is an example for human H3K27me3 ChIP-seq data
++ For non-strand-specific data such as ChIP-seq, please prepare one file counts_hmm.txt.
 ```````
-python AlleleHMM.py H3K27me3_counts_hmm.txt -
+python AlleleHMM.py -i counts_hmm.txt
 ```````
   
