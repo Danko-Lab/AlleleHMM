@@ -9,16 +9,60 @@ import matplotlib.pyplot as plt
 import time
 import multiprocessing
 
+import sys, getopt
+
+counts_hmm="-"
+counts_plus_hmm = "-"
+counts_minus_hmm = "-"
+predict=False
+t = 1e-05
+
+h_message='For strand-specific data such as PRO-seq: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \nFor non-strand-specific data such as ChIP-seq: \npython AlleleHMM.py -i counts_hmm.txt'
+
+
+try:
+   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict="])
+   if len(opts)== 0:
+      print h_message
+      sys.exit(2)
+except getopt.GetoptError:
+   print h_message
+   sys.exit(2)
+
+print opts
+for opt, arg in opts:
+   if opt in ("-h"):
+      print h_message
+      sys.exit()
+   elif opt in ("-p","--input_plus_hmm"):
+      counts_plus_hmm = arg
+   elif opt in ("-m","--input_minus_hmm"):
+      counts_minus_hmm = arg
+   elif opt in ("-i","--input_hmm"):
+      counts_hmm = arg
+   elif opt in ("--predict="):
+      predict = arg
+   elif opt in ("-t"):
+      t = float(arg)
+
+print 'Input file :\t', counts_hmm
+print 'Input plus file :\t', counts_plus_hmm
+print 'Input minus file:\t', counts_minus_hmm
+print 't:\t', t
+
 
 ### input data for training
 # comnined all autosome
 # combined plus trand and minus strand
 
-counts_plus_hmm = argv[1] #"counts_plus_hmm.txt"
-counts_minus_hmm = argv[2] #"counts_minus_hmm.txt"
+#counts_plus_hmm = argv[1] #"counts_plus_hmm.txt"
+#counts_minus_hmm = argv[2] #"counts_minus_hmm.txt"
 #chromosome_num=int(argv[4]) # number of autosomes, excludes sex chromosomes
-prefix= '_'.join([counts_plus_hmm.split("_")[0], "hmm"])
-
+if counts_plus_hmm=="-":
+    counts_plus_hmm = counts_hmm
+    prefix=counts_plus_hmm[0:-4]
+else:
+    prefix= '_'.join([counts_plus_hmm.split("_")[0], "hmm"])
 
 
 #data
@@ -369,7 +413,10 @@ def prediction():
 if __name__ == '__main__':
     t = time.time()
     try:
-        if argv[4]=="predict":
+        if predict !=False:
+            prediction()
+        else:
+            run()
             prediction()
     except:
         run()
