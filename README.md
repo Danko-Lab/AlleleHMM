@@ -10,7 +10,7 @@ python AlleleHMM.py [options]
 options:
 
 To get help:
--h, --help             Show this brief help menu.
+-h,                    Show this brief help menu.
 
 Required options:
 For non-strand-specific data such as ChIP-seq:
