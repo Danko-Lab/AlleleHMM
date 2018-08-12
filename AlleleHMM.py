@@ -2,7 +2,7 @@
 import numpy as np
 from math import *
 import scipy.stats
-from sys import argv
+#from sys import argv
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -15,13 +15,13 @@ counts_hmm="-"
 counts_plus_hmm = "-"
 counts_minus_hmm = "-"
 predict=False
-t = 1e-05
+tao = "default"
 
-h_message='For strand-specific data such as PRO-seq: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \nFor non-strand-specific data such as ChIP-seq: \npython AlleleHMM.py -i counts_hmm.txt'
+h_message='For strand-specific data such as PRO-seq use: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \n\nFor non-strand-specific data such as ChIP-seq use: \npython AlleleHMM.py -i counts_hmm.txt'
 
 
 try:
-   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict="])
+   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao="])
    if len(opts)== 0:
       print h_message
       sys.exit(2)
@@ -30,35 +30,40 @@ except getopt.GetoptError:
    sys.exit(2)
 
 print opts
+i,p,m=0,0,0
 for opt, arg in opts:
    if opt in ("-h"):
       print h_message
       sys.exit()
    elif opt in ("-p","--input_plus_hmm"):
       counts_plus_hmm = arg
+      p+=1
    elif opt in ("-m","--input_minus_hmm"):
       counts_minus_hmm = arg
+      m+=1
    elif opt in ("-i","--input_hmm"):
       counts_hmm = arg
+      i+=1
    elif opt in ("--predict="):
       predict = arg
-   elif opt in ("-t"):
-      t = float(arg)
+   elif opt in ("-t", "--tao="):
+      tao = float(arg)
 
-print 'Input file :\t', counts_hmm
+print 'Input non-strand-specific file :\t', counts_hmm
 print 'Input plus file :\t', counts_plus_hmm
 print 'Input minus file:\t', counts_minus_hmm
-print 't:\t', t
+print 'tao:\t', tao
 
+if (i+p+m) <1 or (i+p > 1) or (i+p+m >2) or (p != m):
+   print '\nInput file error, please check the number of input files!\n'
+   print h_message
+   sys.exit()
 
 ### input data for training
 # comnined all autosome
 # combined plus trand and minus strand
 
-#counts_plus_hmm = argv[1] #"counts_plus_hmm.txt"
-#counts_minus_hmm = argv[2] #"counts_minus_hmm.txt"
-#chromosome_num=int(argv[4]) # number of autosomes, excludes sex chromosomes
-if counts_plus_hmm=="-":
+if p==0 and i==1:
     counts_plus_hmm = counts_hmm
     prefix=counts_plus_hmm[0:-4]
 else:
