@@ -60,5 +60,5 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
 
 
 ## Output files
-+ counts_hmm_regions_t1e-05.bed, counts_plus_hmm_regions_t1e-05.bed, counts_minus_hmm_regions_t1e-05.bed: genomic regions with predicted allele-specificities.
-+ counts_hmm_t=1e-05_parameters.txt: Optimized transition probability and emission probablity using AlleleHMM. They are used to predict the allele-specificities of genomic regions.
++ AlleleHMM_output_[STRAND]_regions_t[TAO].bed: candidate blocks of signal with allelic bias in bed file format.
++ AlleleHMM_output_t=[TAO]_parameters.txt: Optimized transition and emission probablities using AlleleHMM.
