@@ -16,6 +16,7 @@ counts_plus_hmm = "-"
 counts_minus_hmm = "-"
 predict=False
 tao = "default"
+prefix=""
 ITER=30 # number of iteration
 
 
@@ -23,7 +24,7 @@ h_message='For strand-specific data such as PRO-seq use: \npython AlleleHMM.py -
 
 
 try:
-   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao="])
+   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao=", "prefix="])
    if len(opts)== 0:
       print h_message
       sys.exit(2)
@@ -34,22 +35,25 @@ except getopt.GetoptError:
 print opts
 i,p,m=0,0,0
 for opt, arg in opts:
-   if opt in ("-h"):
+    if opt in ("-h"):
       print h_message
       sys.exit()
-   elif opt in ("-p","--input_plus_hmm"):
+    elif opt in ("-p","--input_plus_hmm"):
       counts_plus_hmm = arg
       p+=1
-   elif opt in ("-m","--input_minus_hmm"):
+    elif opt in ("-m","--input_minus_hmm"):
       counts_minus_hmm = arg
+      assert counts_minus_hmm.count("plus") <1, 'please double check file name is correct'
       m+=1
-   elif opt in ("-i","--input_hmm"):
+    elif opt in ("-i","--input_hmm"):
       counts_hmm = arg
       i+=1
-   elif opt in ("--predict="):
+    elif opt in ("--predict="):
       predict = arg
-   elif opt in ("-t", "--tao="):
+    elif opt in ("-t", "--tao="):
       tao = float(arg)
+    elif opt in ("--prefix="):
+      prefix = arg
 
 print 'Input non-strand-specific file :\t', counts_hmm
 print 'Input plus file :\t', counts_plus_hmm
@@ -62,17 +66,17 @@ if (i+p+m) <1 or (i+p > 1) or (i+p+m >2) or (p != m):
    sys.exit()
 
 
-
-if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
-    counts_plus_hmm = counts_hmm
-    prefix='.'.join(counts_plus_hmm.split(".")[0:-1])
-else:
-    temp=counts_plus_hmm.split("plus")
-    prefix=temp[0].rstrip("_")
-    if len(temp) > 1:
-        for i in xrange(1, len(temp)-1):
-            prefix+=temp[i].strip("_")
-    prefix +="_"+temp[-1].split(".")[0].lstrip("_")
+if prefix == "":
+   if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
+      counts_plus_hmm = counts_hmm
+      prefix='.'.join(counts_plus_hmm.split(".")[0:-1])
+   else:
+      temp=counts_plus_hmm.split("plus") #"XXX_" "_YY.txt"
+      temp[-1] = temp[-1].split(".")[0]
+      for i in xrange(len(temp)):
+         temp[i]=temp[i].strip("_")
+      prefix='_'.join(temp)
+      prefix = prefix.strip("_")
 
 
 print 'output prefix:\t', prefix
@@ -353,7 +357,14 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
                 u = snppos_c[l]
         region_list.append([str(c), str(u-1), str(snppos_c[-1]), state_map[v_path_c[-1]]])
     
-    with open(f_v[0:-4]+'_regions_t'+str('%.0E' %t)+'.bed', 'w') as out:
+    #with open(f_v[0:-4]+'_regions_t'+str('%.0E' %t)+'.bed', 'w') as out:
+    name="both"
+    if strand== "+":
+        name="plus"
+    elif strand== "-":
+        name="minus"
+        
+    with open(prefix+"_"+name+'_regions_t'+str('%.0E' %t)+'.bed', 'w') as out:
         for r in region_list:
             out.write('\t'.join(r+['111',strand]))
             out.write('\n')
