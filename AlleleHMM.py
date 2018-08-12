@@ -61,19 +61,27 @@ if (i+p+m) <1 or (i+p > 1) or (i+p+m >2) or (p != m):
    print h_message
    sys.exit()
 
-### input data for training
-# comnined all autosome
-# combined plus trand and minus strand
 
-if p==0 and i==1:
+
+if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
     counts_plus_hmm = counts_hmm
-    prefix=counts_plus_hmm[0:-4]
+    prefix='.'.join(counts_plus_hmm.split(".")[0:-1])
 else:
-    prefix= '_'.join([counts_plus_hmm.split("_")[0], "hmm"])
+    temp=counts_plus_hmm.split("plus")
+    prefix=temp[0].rstrip("_")
+    if len(temp) > 1:
+        for i in xrange(1, len(temp)-1):
+            prefix+=temp[i].strip("_")
+    prefix +="_"+temp[-1].split(".")[0].lstrip("_")
+
+
+print 'output prefix:\t', prefix
 
 input_i, input_p, input_m= i,p,m
 
 #data
+### input data for training
+# comnined chromosomes
 # combine plus strand and minus strand info for user
 if counts_minus_hmm == "-":
     mat  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
