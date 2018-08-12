@@ -1,6 +1,41 @@
 # AlleleHMM
-AlleleHMM takes allele-specific read counts file as input. By default, it runs with 9 values of tao (0.1, 0.01,..., 1e-09), and output bed files of predicted states for each value of tao and input file.
+The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias.
 
+AlleleHMM.py identify candidate allele-specific blocks using 9 values of tao (1E-01, 1E-02, ...,1E-09) by default. User can assign a specific tao using -t option.
+
+## Usage
+```````
+python AlleleHMM.py [options]
+
+options:
+
+To get help:
+-h, --help             Show this brief help menu.
+
+Required options:
+For non-strand-specific data such as ChIP-seq:
+-i, --input_hmm=PATH   Path to the non-strnad-specific, allele-specific read counts file (counts_hmm.txt)
+
+For strand-specific data such as PRO-seq:
+-p, --input_plus_hmm=PATH    Path to the plus-strand allele-specific read counts file (counts_plus_hmm.txt)
+-m, --input_minus_hmm=PATH   Path to the minus-strand allele-specific read counts file (counts_minus_hmm.txt)
+
+Optional operations:
+-o, --output_prefix=STR      prefix for the output file. default=AlleleHMM_output
+-t, --tao=FLOAT   AlleleHMM identify allele-specific blocks using 9 values of t (1E-01, 1E-02, ...,1E-09) by default.
+                  User can assign a specific tao for the calculation.
+```````
+
++ For strand-specific data such as PRO-seq, please prepare two files.
+  * counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
+  * counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
+```````
+python AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt
+```````
++ For non-strand-specific data such as ChIP-seq, please prepare one file counts_hmm.txt.
+```````
+python AlleleHMM.py -i counts_hmm.txt
+```````
 
 ## Input files
 
@@ -23,20 +58,6 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
 1       569933  0       2       2       S
 ```````
 
-
-## Usage
-
-+ For strand-specific data such as PRO-seq, please prepare two files.
-  * counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
-  * counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
-```````
-python AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt
-```````
-+ For non-strand-specific data such as ChIP-seq, please prepare one file counts_hmm.txt.
-```````
-python AlleleHMM.py -i counts_hmm.txt
-```````
-  
 
 ## Output files
 + counts_hmm_regions_t1e-05.bed, counts_plus_hmm_regions_t1e-05.bed, counts_minus_hmm_regions_t1e-05.bed: genomic regions with predicted allele-specificities.
