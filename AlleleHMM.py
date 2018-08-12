@@ -16,27 +16,55 @@ counts_plus_hmm = "-"
 counts_minus_hmm = "-"
 predict=False
 tao = "default"
-prefix=""
+prefix="AlleleHMM_output"
 ITER=30 # number of iteration
 
+def help_message():
+    print "python AlleleHMM.py [options]"
+    print ""
+    print "options:"
+    print ""
+    print "To get help:"
+    print "-h, --help             Show this brief help menu."
+    print ""
+    print "Required options:"
+    print "For non-strand-specific data such as ChIP-seq:"
+    print "-i, --input_hmm=PATH   Path to the non-strnad-specific, allele-specific read counts file (counts_hmm.txt)"
+    print ""
+    print "For strand-specific data such as PRO-seq:"
+    print "-p, --input_plus_hmm=PATH    Path to the plus-strand allele-specific read counts file (counts_plus_hmm.txt)"
+    print "-m, --input_minus_hmm=PATH   Path to the minus-strand allele-specific read counts file (counts_minus_hmm.txt)"
+    print ""
+    
+    print "Optional operations:"
+    print "-o, --output_prefix=STR      prefix for the output file. default=AlleleHMM_output"
+    print "-t, --tao=FLOAT   AlleleHMM identify allele-specific blocks using 9 values of t (1E-01, 1E-02, ...,1E-09) by default."
+    print "                  User can assign a specific tao for the calculation."
+    print ""
+    print "examples:"
+    print "For strand-specific data such as PRO-seq use:"
+    print "python AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt"
+    
+    print "For non-strand-specific data such as ChIP-seq use: "
+    print "python AlleleHMM.py -i counts_hmm.txt"
 
-h_message='For strand-specific data such as PRO-seq use: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \n\nFor non-strand-specific data such as ChIP-seq use: \npython AlleleHMM.py -i counts_hmm.txt'
-
+#h_message='For strand-specific data such as PRO-seq use: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \n\nFor non-strand-specific data such as ChIP-seq use: \npython AlleleHMM.py -i counts_hmm.txt'
+#h_message='python AlleleHMM.py -h'
 
 try:
-   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao=", "prefix="])
+   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao=", "output_prefix="])
    if len(opts)== 0:
-      print h_message
+      help_message()
       sys.exit(2)
 except getopt.GetoptError:
-   print h_message
+   help_message()
    sys.exit(2)
 
-print opts
+#print opts
 i,p,m=0,0,0
 for opt, arg in opts:
     if opt in ("-h"):
-      print h_message
+      help_message()
       sys.exit()
     elif opt in ("-p","--input_plus_hmm"):
       counts_plus_hmm = arg
@@ -52,7 +80,7 @@ for opt, arg in opts:
       predict = arg
     elif opt in ("-t", "--tao="):
       tao = float(arg)
-    elif opt in ("--prefix="):
+    elif opt in ("-o", "--output_prefix="):
       prefix = arg
 
 print 'Input non-strand-specific file :\t', counts_hmm
@@ -62,21 +90,23 @@ print 'tao:\t', tao
 
 if (i+p+m) <1 or (i+p > 1) or (i+p+m >2) or (p != m):
    print '\nInput file error, please check the number of input files!\n'
-   print h_message
+   help_message()
    sys.exit()
 
-
-if prefix == "":
-   if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
+if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
       counts_plus_hmm = counts_hmm
-      prefix='.'.join(counts_plus_hmm.split(".")[0:-1])
-   else:
-      temp=counts_plus_hmm.split("plus") #"XXX_" "_YY.txt"
-      temp[-1] = temp[-1].split(".")[0]
-      for i in xrange(len(temp)):
-         temp[i]=temp[i].strip("_")
-      prefix='_'.join(temp)
-      prefix = prefix.strip("_")
+
+#if prefix == "":
+#   if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
+#      counts_plus_hmm = counts_hmm
+#      prefix='.'.join(counts_plus_hmm.split(".")[0:-1])
+#   else:
+#      temp=counts_plus_hmm.split("plus") 
+#      temp[-1] = temp[-1].split(".")[0]
+#      for i in xrange(len(temp)):
+#         temp[i]=temp[i].strip("_")
+#      prefix='_'.join(temp)
+#      prefix = prefix.strip("_")
 
 
 print 'output prefix:\t', prefix
