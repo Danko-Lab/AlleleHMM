@@ -16,7 +16,7 @@ counts_plus_hmm = "-"
 counts_minus_hmm = "-"
 predict=False
 tao = "default"
-ITER=10 # number of iteration
+ITER=30 # number of iteration
 
 
 h_message='For strand-specific data such as PRO-seq use: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \n\nFor non-strand-specific data such as ChIP-seq use: \npython AlleleHMM.py -i counts_hmm.txt'
