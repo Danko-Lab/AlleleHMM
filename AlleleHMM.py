@@ -69,6 +69,7 @@ if p==0 and i==1:
 else:
     prefix= '_'.join([counts_plus_hmm.split("_")[0], "hmm"])
 
+input_i, input_p, input_m= i,p,m
 
 #data
 # combine plus strand and minus strand info for user
@@ -342,7 +343,7 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
                 u = snppos_c[l]
         region_list.append([str(c), str(u-1), str(snppos_c[-1]), state_map[v_path_c[-1]]])
     
-    with open(f_v[0:-4]+'_regions_t'+str(t)+'.bed', 'w') as out:
+    with open(f_v[0:-4]+'_regions_t'+str('%.0E' %t)+'.bed', 'w') as out:
         for r in region_list:
             out.write('\t'.join(r+['111',strand]))
             out.write('\n')
@@ -365,14 +366,14 @@ def run_em_T_mp_fixed(t):
         p_Y_f_list.append(p_Y_f)
         new_T_list.append(new_T)
         new_P_list.append(new_P)
-    make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str(t)+", Tsx allow change for EM", prefix+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str(t)+".pdf")
-    with open(prefix+"_t="+str(t)+'_parameters.txt', 'w') as out:
+    make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str('%.0E' %t)+", Tsx allow change for EM", prefix+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str('%.0E' %t)+".pdf")
+    with open(prefix+"_t="+str('%.0E' %t)+'_parameters.txt', 'w') as out:
         out.write("T="+str(new_T_list[-1])+"\n")
         out.write("P="+str(new_P_list[-1])+"\n")
     return [t, new_T_list,new_P_list, p_Y_f_list]
 
 
-def run():
+def run_all():
     t_list=[]
     for i in range(1,10):
         t_list.append(10**(-i))
@@ -389,41 +390,76 @@ def run():
             result.append(run_em_T_mp_fixed(10**(-i)))
 
 
+def prediction(t):
+    print prefix+"_t="+str('%.0E' %t)+'_parameters.txt'
+    with open(prefix+"_t="+str('%.0E' %t)+'_parameters.txt') as p_in:
+        l=p_in.readlines()
+    #print i
+    T=[]
+    for ll in l[0:3]:
+        for lll in ll.strip().strip('T=').strip('[').strip(']').split():
+            #print lll
+            T.append(float(lll))
+        #print T
+    new_T=np.array(T).reshape(3,3)
+    new_P=[float(ll) for ll in l[-1].strip().strip('P=').strip('[').strip(']').split(",")]
+    print "T", new_T
+    print "P", new_P
+    if input_i+input_m+input_p==1 : #counts_minus_hmm == "-":
+        hmm_prediction(counts_plus_hmm, " ", t,new_T, new_P)
+    else:
+        hmm_prediction(counts_plus_hmm, "+", t,new_T, new_P)
+        hmm_prediction(counts_minus_hmm, "-", t,new_T, new_P)
 
-def prediction():
+def prediction_all():
     for i in range(1,10):
-        #print str(10**(-i))
-        print prefix+"_t="+str(10**(-i))+'_parameters.txt'
-        with open(prefix+"_t="+str(10**(-i))+'_parameters.txt') as p_in:
-            l=p_in.readlines()
-        #print i
-        T=[]
-        for ll in l[0:3]:
-            for lll in ll.strip().strip('T=').strip('[').strip(']').split():
-                #print lll
-                T.append(float(lll))
-            #print T
-        new_T=np.array(T).reshape(3,3)
-        new_P=[float(ll) for ll in l[-1].strip().strip('P=').strip('[').strip(']').split(",")]
-        print "T", new_T
-        print "P", new_P
-        if counts_minus_hmm == "-":
-            hmm_prediction(counts_plus_hmm, " ", '1e-0'+str(i),new_T, new_P)
-        else:
-            hmm_prediction(counts_plus_hmm, "+", '1e-0'+str(i),new_T, new_P)
-            hmm_prediction(counts_minus_hmm, "-",'1e-0'+str(i),new_T, new_P)
+        prediction(t)
+
+#def prediction_all():
+#    for i in range(1,10):
+#        #print str(10**(-i))
+#        print prefix+"_t="+str(10**(-i))+'_parameters.txt'
+#        with open(prefix+"_t="+str(10**(-i))+'_parameters.txt') as p_in:
+#            l=p_in.readlines()
+#        #print i
+#        T=[]
+#        for ll in l[0:3]:
+#            for lll in ll.strip().strip('T=').strip('[').strip(']').split():
+#                #print lll
+#                T.append(float(lll))
+#            #print T
+#        new_T=np.array(T).reshape(3,3)
+#        new_P=[float(ll) for ll in l[-1].strip().strip('P=').strip('[').strip(']').split(",")]
+#        print "T", new_T
+#        print "P", new_P
+#        if input_i+input_m+input_p==1 : #if counts_minus_hmm == "-":
+#            hmm_prediction(counts_plus_hmm, " ", '1e-0'+str(i),new_T, new_P)
+#        else:
+#            hmm_prediction(counts_plus_hmm, "+", '1e-0'+str(i),new_T, new_P)
+#            hmm_prediction(counts_minus_hmm, "-",'1e-0'+str(i),new_T, new_P)
 
 
 
 if __name__ == '__main__':
     t = time.time()
-    try:
-        if predict !=False:
-            prediction()
-        else:
-            run()
-            prediction()
-    except:
-        run()
-        prediction()
+    if tao != "default": # specific tao
+        try:
+            if predict !=False:
+                prediction(tao)
+            else:
+                run_em_T_mp_fixed(tao)
+                prediction(tao)
+        except:
+            run_em_T_mp_fixed(tao)
+            prediction(tao)
+    else: # all tao
+        try:
+            if predict !=False:
+                prediction_all()
+            else:
+                run_all()
+                prediction_all()
+        except:
+            run_all()
+            prediction_all()
     print "AlleleHMM Run finished:", time.time() -t , "secs"
