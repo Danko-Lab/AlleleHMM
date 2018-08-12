@@ -16,6 +16,8 @@ counts_plus_hmm = "-"
 counts_minus_hmm = "-"
 predict=False
 tao = "default"
+ITER=10 # number of iteration
+
 
 h_message='For strand-specific data such as PRO-seq use: \npython AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt \n\nFor non-strand-specific data such as ChIP-seq use: \npython AlleleHMM.py -i counts_hmm.txt'
 
@@ -285,7 +287,7 @@ def em_interate_T_mp_fixed(T, p, x=mat, n=total, update_state=1):
     k = update_state
     new_T[k] = A[k]/A[k].sum()
     #print "secs: ", t- time.time()
-    print new_T, new_P, p_Y_f
+    #print new_T, new_P, p_Y_f
     return np.log(new_T), new_P, p_Y_f
 
 
@@ -350,7 +352,7 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
 
 
 ### run em with Tmp fixed, Ts update
-def run_em_T_mp_fixed(t):
+def run_em_T_mp_fixed(t, max_iter = ITER):
     t_mm, t_ms, t_mp = 1-t, t/2, t/2
     t_sm, t_ss, t_sp = t/2, 1-t, t/2
     t_pm, t_ps, t_pp = t/2, t/2, 1-t
@@ -359,7 +361,7 @@ def run_em_T_mp_fixed(t):
     p_Y_f_list = [p_Y_f]
     new_T_list = [new_T]
     new_P_list = [new_P]
-    max_iter = 30
+    max_iter = max_iter
     for i in xrange(max_iter):
         print "iteration",i
         new_T, new_P, p_Y_f = em_interate_T_mp_fixed(new_T, new_P, x=mat, n=total)
@@ -413,30 +415,7 @@ def prediction(t):
 
 def prediction_all():
     for i in range(1,10):
-        prediction(t)
-
-#def prediction_all():
-#    for i in range(1,10):
-#        #print str(10**(-i))
-#        print prefix+"_t="+str(10**(-i))+'_parameters.txt'
-#        with open(prefix+"_t="+str(10**(-i))+'_parameters.txt') as p_in:
-#            l=p_in.readlines()
-#        #print i
-#        T=[]
-#        for ll in l[0:3]:
-#            for lll in ll.strip().strip('T=').strip('[').strip(']').split():
-#                #print lll
-#                T.append(float(lll))
-#            #print T
-#        new_T=np.array(T).reshape(3,3)
-#        new_P=[float(ll) for ll in l[-1].strip().strip('P=').strip('[').strip(']').split(",")]
-#        print "T", new_T
-#        print "P", new_P
-#        if input_i+input_m+input_p==1 : #if counts_minus_hmm == "-":
-#            hmm_prediction(counts_plus_hmm, " ", '1e-0'+str(i),new_T, new_P)
-#        else:
-#            hmm_prediction(counts_plus_hmm, "+", '1e-0'+str(i),new_T, new_P)
-#            hmm_prediction(counts_minus_hmm, "-",'1e-0'+str(i),new_T, new_P)
+        prediction(10**(-i))
 
 
 
