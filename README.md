@@ -61,6 +61,16 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
 
 ## Output files
 + AlleleHMM_output_[STRAND]_regions_t[TAO].bed: candidate blocks of signal with allelic bias in bed file format.
+    * Col1: Chromosome name, sorted by dictionary-order
+    * Col4: hidden states
+    * Col6: + for plus strand, - for minus strand, space for non-strand-specific
+    ```````
+    1	565005	565006	P	111	+
+    1	565285	565591	M	111	+
+    1	566572	568214	P	111	+
+    1	569093	569094	M	111	+
+    1	569932	16971948	S	111	+
+    ```````
 + AlleleHMM_output_t=[TAO]_parameters.txt: Optimized transition probability and expected materal reads fraction of three states (M,P,S) using AlleleHMM. 
     * t_ij: transition probability from state i to state j
     * p_i: expected materal reads fraction of state i.v
