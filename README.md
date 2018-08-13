@@ -3,7 +3,7 @@ The key goal of AlleleHMM is to identify allele-specific blocks of signal in dis
 
 AlleleHMM.py identify candidate allele-specific blocks using 9 values of tao (1E-01, 1E-02, ...,1E-09) by default. User can assign a specific tao using -t option.
 
-<img src="AlleleHMM.pdf">
+<img src="AlleleHMM.png">
 
 ## Usage
 ```````
