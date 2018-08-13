@@ -1,7 +1,7 @@
 # AlleleHMM
 The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias.
 
-AlleleHMM.py identify candidate allele-specific blocks using 9 values of tao (1E-01, 1E-02, ...,1E-09) by default. User can assign a specific tao using -t option.
+AlleleHMM.py identifies candidate allele-specific blocks using 9 values of tao (1E-01, 1E-02, ...,1E-09) by default. The user can assign a specific tao using -t option.
 
 <img src="AlleleHMM.png">
 
@@ -41,11 +41,11 @@ python AlleleHMM.py -i counts_hmm.txt
 
 ## Input files
 
-AlleleHMM takes allele-specific read counts file in the following formats, please notes that:
+AlleleHMM takes the allele-specific read counts file in the following formats, please note that:
 + Please use tab delimited text file
 + Must have header at the first line and only the first line.
 + SNP position (snppos) must be sorted according to genomic location. 
-+ Please see full example of counts_hmm.txt in input_file_exmaples folder.
++ Please see full example of counts_hmm.txt in input_file_examples folder.
 
 ```````
 chrm    snppos  mat_allele_count        pat_allele_count        total_reads_count       state
