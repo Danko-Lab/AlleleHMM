@@ -8,7 +8,7 @@ while test $# -gt 0; do
       echo "Reads need to map to diploid genomes, and then liftOver to the reference genome"
       echo ""
       echo "Requirements in current working directory:"
-      echo "BinomialTestForBed.py, FalsePosForBed.py"
+      echo "bedtools, BinomialTestForBed.py, FalsePosForBed.py"
       echo ""
       echo "bash BinomialTest.bsh [options] -b <FILE B> -m <FILE M> -p <FILE P>"
       echo " "
