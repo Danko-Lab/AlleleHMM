@@ -3,35 +3,36 @@
 while test $# -gt 0; do
         case "$1" in
                 -h|--help)
-      echo "Perform binomial tests in the genomic regions specified in file B (-b)"
-      echo "using the mapping location of allele-specific reads in file M (-m) and P (-p)"
+      echo "Perform binomial tests in the genomic regions specified in BinomTest_BED file (-b)"
+      echo "using the mapping location of allele-specific reads in file MAT_READ_BED (-m) and PAT_READ_BED (-p)"
       echo "Reads need to map to diploid genomes, and then liftOver to the reference genome"
       echo ""
       echo "Requirements in current working directory:"
       echo "bedtools, BinomialTestForBed.py, FalsePosForBed.py"
       echo ""
-      echo "bash BinomialTest.bsh [options] -b <FILE B> -m <FILE M> -p <FILE P>"
+      echo "bash BinomialTest.bsh [options] -b BinomTest_BED -m MAT_READ_BED -p PAT_READ_BED"
       echo " "
       echo "options:"
       echo "To get help:"
       echo "-h, --help             Show this brief help menu."
       echo " "
       echo "Required options:"
-      echo "-b     BED file B. Path to a bed file containing regions to perform binomial tests"
-      echo "-m     BED file M. Path to a bed file containing the mapping location of maternal specific reads (liftOver to reference genome)"
-      echo "-p     BED file P. Path to a bed file containing the mapping location of paternal specific reads (liftOver to reference genome)"
+      echo "-b,--BinomTest_BED=PATH    Path to a bed file containing regions to perform binomial tests"
+      echo "-m,--MAT_READ_BED=PATH     Path to a bed file containing the mapping location of maternal specific reads (liftOver to reference genome)"
+      echo "-p,--PAT_READ_BED=PATH     Path to a bed file containing the mapping location of paternal specific reads (liftOver to reference genome)"
       echo ""
       echo "Optional operations:"
-      echo "-i     BED file I. Path to a bed file containing the mapping location of reads that cannot tell which allele it mapps to"
-      echo "-ns    Non-strand-specific analysis. Report hits in file M, P, or I that overlap file B regardless of the strand. Strandedness is forced by default. [default=off]"
-      echo "-fs    Number of similation for FDR test [default=20]"
-      echo "-fc    FDR cut off value [default=0.1]"
+      echo "-i,--IDENTICAL_READ_BED=PATH   Path to a bed file containing the mapping location of reads that cannot tell which allele it mapps to"
+      echo "-fs,--FDR_SIMS=INT             Number of similation for FDR test [default=20]"
+      echo "-fc,--FDR_CUTOFF=FLOAT         FDR cut off value [default=0.1]"
+      echo "-ns                            Non-strand-specific analysis. Report hits in file M, P, or I that overlap file B regardless of the strand. Strandedness is forced by default. [default=off]"
+
                         exit 0
                         ;;
               -b)
                     shift
                     if test $# -gt 0; then
-                        export AlleleHMM_output=$1
+                        export BinomTest_BED=$1
                     else
                         echo "-b No path to a bed file containing regions to perform binomial tests was specified"
                         exit 1
@@ -99,7 +100,7 @@ while test $# -gt 0; do
 done
 
 ## CHECK ARGUMENTS.
-if [ -z "$AlleleHMM_output" ]; then
+if [ -z "$BinomTest_BED" ]; then
   echo " -b Path to a bed file containing regions to perform binomial tests is required."
   echo " use bash BinomialTest.bsh --help."
   exit 1
@@ -132,7 +133,7 @@ if [ -z "$STRANDNESS" ]; then
 fi
 
 
-echo "Binomial_Test_BED              $AlleleHMM_output"
+echo "BinomTest_BED                  $BinomTest_BED"
 echo "MAT_READ_BED                   $MAT_READ_BED"
 echo "PAT_READ_BED                   $PAT_READ_BED"
 echo "IDENTICAL_READ_BED             $IDENTICAL_READ_BED"
@@ -144,7 +145,7 @@ echo "FDR_CUTOFF                     $FDR_CUTOFF"
 ### counts the maternal, paternal reads, and the reads that cannot tell where it from, in the regions of hmm predictions
 # perform BinomialTest and filter by FDR<= FDR_CUTOFF
 
-f=${AlleleHMM_output}
+f=${BinomTest_BED}
 j=`echo $f|rev|cut -d . -f 2-|rev`
 
 if [[ ${STRANDNESS} == "TRUE" ]]; then 
