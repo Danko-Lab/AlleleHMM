@@ -116,12 +116,12 @@ Optional operations:
 Examples:
 + For strand-specific data such as PRO-seq
     ```````
-    bash BinomialTest.bsh -b AlleleHMM_output_plus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
-    bash BinomialTest.bsh -b AlleleHMM_output_minus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    bash BinomialTest.bsh -b AlleleHMM_output_plus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED -i IDENTICAL_READ_BED
+    bash BinomialTest.bsh -b AlleleHMM_output_minus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED -i IDENTICAL_READ_BED
     ```````
 + For non-strand-specific data such as ChIP-seq
     ```````
-    bash BinomialTest.bsh -ns -b AlleleHMM_output_both_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    bash BinomialTest.bsh -ns -b AlleleHMM_output_both_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED -i IDENTICAL_READ_BED
     ```````
 ### Input files
 + FILE B: output file from AlleleHMM.py **AlleleHMM_output_[STRAND]_regions_t[TAO].bed**. Can also be any bed file containing regions to perform binomial tests.
