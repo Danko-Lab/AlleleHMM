@@ -72,7 +72,6 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
     chr1    566572  568214  P       111     +
     chr1    569093  569094  M       111     +
     chr1    569932  16971948        S       111     +
-    chr1    17053781        17053782        M       111     +
     ```````
 + AlleleHMM_output_t=[TAO]_parameters.txt: Optimized transition probability and expected materal reads fraction of three states (M,P,S) using AlleleHMM. 
     * t_ij: transition probability from state i to state j
