@@ -16,11 +16,11 @@ To get help:
 
 Required options:
 For non-strand-specific data such as ChIP-seq:
--i, --input_hmm=PATH   Path to the non-strnad-specific, allele-specific read counts file (counts_hmm.txt)
+-i, --input_hmm=PATH   Path to the non-strnad-specific, allele-specific read counts file (AlleleHMM_input.txt)
 
 For strand-specific data such as PRO-seq:
--p, --input_plus_hmm=PATH    Path to the plus-strand allele-specific read counts file (counts_plus_hmm.txt)
--m, --input_minus_hmm=PATH   Path to the minus-strand allele-specific read counts file (counts_minus_hmm.txt)
+-p, --input_plus_hmm=PATH    Path to the plus-strand allele-specific read counts file (AlleleHMM_input_plus.txt)
+-m, --input_minus_hmm=PATH   Path to the minus-strand allele-specific read counts file (AlleleHMM_input_minus.txt)
 
 Optional operations:
 -o, --output_prefix=STR      prefix for the output file. default=AlleleHMM_output
@@ -29,14 +29,14 @@ Optional operations:
 ```````
 
 + For strand-specific data such as PRO-seq, please prepare two files.
-  * counts_plus_hmm.txt: allele-specific read counts file generated from plus strand
-  * counts_minus_hmm.txt: allele-specific read counts file generated from minus strand
+  * AlleleHMM_input_plus.txt: allele-specific read counts file generated from plus strand
+  * AlleleHMM_input_minus.txt: allele-specific read counts file generated from minus strand
 ```````
-python AlleleHMM.py -p counts_plus_hmm.txt -m counts_minus_hmm.txt
+python AlleleHMM.py -p AlleleHMM_input_plus.txt -m AlleleHMM_input_minus.txt
 ```````
-+ For non-strand-specific data such as ChIP-seq, please prepare one file counts_hmm.txt.
++ For non-strand-specific data such as ChIP-seq, please prepare one file AlleleHMM_input.txt.
 ```````
-python AlleleHMM.py -i counts_hmm.txt
+python AlleleHMM.py -i AlleleHMM_input.txt
 ```````
 
 ## Input files
@@ -45,20 +45,20 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
 + Please use tab delimited text file
 + Must have header at the first line and only the first line.
 + SNP position (snppos) must be sorted according to genomic location. 
-+ Please see full example of counts_hmm.txt in input_file_examples folder.
++ Please see full example of AlleleHMM_input.txt in input_file_examples folder.
 
-```````
-chrm    snppos  mat_allele_count        pat_allele_count        total_reads_count       state
-1       565006  0       17      17      P
-1       565286  46      0       46      M
-1       565406  37      0       37      M
-1       565419  31      0       31      M
-1       565591  27      0       27      M
-1       566573  0       2       2       S
-1       568214  0       6       6       P
-1       569094  93      0       93      M
-1       569933  0       2       2       S
-```````
+    ```````
+    chrm    snppos  mat_allele_count        pat_allele_count        total_reads_count       state
+    chr1    565006  0       17      17      P
+    chr1    565286  46      0       46      M
+    chr1    565406  37      0       37      M
+    chr1    565419  31      0       31      M
+    chr1    565591  27      0       27      M
+    chr1    566573  0       2       2       S
+    chr1    568214  0       6       6       P
+    chr1    569094  93      0       93      M
+    chr1    569933  0       2       2       S
+    ```````
 
 
 ## Output files
@@ -67,11 +67,12 @@ chrm    snppos  mat_allele_count        pat_allele_count        total_reads_coun
     * Col4: hidden states
     * Col6: + for plus strand, - for minus strand, space for non-strand-specific
     ```````
-    1	565005	565006	P	111	+
-    1	565285	565591	M	111	+
-    1	566572	568214	P	111	+
-    1	569093	569094	M	111	+
-    1	569932	16971948	S	111	+
+    chr1    565005  565006  P       111     +
+    chr1    565285  565591  M       111     +
+    chr1    566572  568214  P       111     +
+    chr1    569093  569094  M       111     +
+    chr1    569932  16971948        S       111     +
+    chr1    17053781        17053782        M       111     +
     ```````
 + AlleleHMM_output_t=[TAO]_parameters.txt: Optimized transition probability and expected materal reads fraction of three states (M,P,S) using AlleleHMM. 
     * t_ij: transition probability from state i to state j
