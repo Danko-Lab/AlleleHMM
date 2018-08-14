@@ -39,6 +39,10 @@ while test $# -gt 0; do
                     fi
                     shift
                     ;;
+              --BinomTest_BED*)
+                    export BinomTest_BED=`echo $1 | sed -e 's/^[^=]*=//g'`
+                    shift
+                    ;;
               -m)
                     shift
                     if test $# -gt 0; then
@@ -47,6 +51,10 @@ while test $# -gt 0; do
                         echo "-m No path to a bed file containing the mapping location of maternal specific reads was specified"
                         exit 1
                     fi
+                    shift
+                    ;;
+              --MAT_READ_BED*)
+                    export MAT_READ_BED=`echo $1 | sed -e 's/^[^=]*=//g'`
                     shift
                     ;;
               -p)
@@ -59,6 +67,10 @@ while test $# -gt 0; do
                     fi
                     shift
                     ;;
+              --PAT_READ_BED*)
+                    export PAT_READ_BED=`echo $1 | sed -e 's/^[^=]*=//g'`
+                    shift
+                    ;;
               -i)
                     shift
                     if test $# -gt 0; then
@@ -67,6 +79,10 @@ while test $# -gt 0; do
                         echo "-i No file path was specified"
                         exit 1
                     fi
+                    shift
+                    ;;
+              --IDENTICAL_READ_BED*)
+                    export IDENTICAL_READ_BED=`echo $1 | sed -e 's/^[^=]*=//g'`
                     shift
                     ;;
               -fs)
@@ -79,6 +95,10 @@ while test $# -gt 0; do
                     fi
                     shift
                     ;;
+              --FDR_SIMS*)
+                    export FDR_SIMS=`echo $1 | sed -e 's/^[^=]*=//g'`
+                    shift
+                    ;;
               -fc)
                     shift
                     if test $# -gt 0; then
@@ -87,6 +107,10 @@ while test $# -gt 0; do
                         echo "-fc No FDR cutoff value was specified"
                         exit 1
                     fi
+                    shift
+                    ;;
+              --FDR_CUTOFF*)
+                    export FDR_CUTOFF=`echo $1 | sed -e 's/^[^=]*=//g'`
                     shift
                     ;;
               -ns)
