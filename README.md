@@ -1,11 +1,13 @@
 # AlleleHMM
 The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias.
 
-AlleleHMM.py identifies candidate allele-specific blocks using 9 values of tao (1E-01, 1E-02, ...,1E-09) by default. The user can assign a specific tao using -t option.
++ AlleleHMM.py - identifies candidate allele-specific blocks
++ BinomialTest.bsh - performs Binomial tests on those candidate allele-specific blocks, and output AlleleHMM blocks with significantly allele-biased (FDR<= 10%).
 
 <img src="AlleleHMM.png">
 
-## Usage
+## AlleleHMM.py 
+### Usage
 ```````
 python AlleleHMM.py [options]
 
@@ -39,7 +41,7 @@ python AlleleHMM.py -p AlleleHMM_input_plus.txt -m AlleleHMM_input_minus.txt
 python AlleleHMM.py -i AlleleHMM_input.txt
 ```````
 
-## Input files
+### Input files
 
 AlleleHMM takes the allele-specific read counts file in the following formats, please note that:
 + Please use tab delimited text file
@@ -61,7 +63,7 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
     ```````
 
 
-## Output files
+### Output files
 + Please see examples in the output_file_exmaples folder.
 + AlleleHMM_output_[STRAND]_regions_t[TAO].bed: candidate blocks of signal with allelic bias in bed file format.
     * Col1: Chromosome name, sorted by dictionary-order
@@ -83,5 +85,5 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
       [t_pm t_ps t_pp]]
     P= [p_m, p_s, p_p]
     ```````
-
+## BinomialTest.bsh
 
