@@ -3,8 +3,9 @@
 while test $# -gt 0; do
         case "$1" in
                 -h|--help)
-      echo "Given Using the allele-specific reads from maternal and paternal haplotype to"
-      echo "perform binomial test in the genomic regions specified by -b option"
+      echo "Perform binomial tests in the genomic regions specified in file B (-b)"
+      echo "using the mapping location of allele-specific reads in file M (-m) and P (-p)"
+      echo "Reads need to map to diploid genomes, and then liftOver to the reference genome"
       echo ""
       echo "Requirements in current working directory:"
       echo "BinomialTestFor_merged_cov.bed.py, FalsePosFor_merged_cov.bed.py"
