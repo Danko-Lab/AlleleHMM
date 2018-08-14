@@ -35,11 +35,11 @@ Optional operations:
   * AlleleHMM_input_plus.txt: allele-specific read counts file generated from plus strand
   * AlleleHMM_input_minus.txt: allele-specific read counts file generated from minus strand
 ```````
-python AlleleHMM.py -p AlleleHMM_input_plus.txt -m AlleleHMM_input_minus.txt
+python AlleleHMM.py -p AlleleHMM_input_plus.txt -m AlleleHMM_input_minus.txt -t 1e-05
 ```````
 + For non-strand-specific data such as ChIP-seq, please prepare one file AlleleHMM_input.txt.
 ```````
-python AlleleHMM.py -i AlleleHMM_input.txt
+python AlleleHMM.py -i AlleleHMM_input.txt -t 1e-05
 ```````
 
 ### Input files
