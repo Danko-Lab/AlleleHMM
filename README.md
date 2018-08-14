@@ -124,9 +124,11 @@ Examples:
     bash BinomialTest.bsh -ns -b AlleleHMM_output_both_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
     ```````
 ### Input files
-+ BED FILE B: Output file from AlleleHMM.py **AlleleHMM_output_[STRAND]_regions_t[TAO].bed**. Can also be any bed file containing regions to perform binomial tests.
-+ BED FILE M: A bed file containing the mapping location of maternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to refrence genome, there will be mapping bias. Please see input_file_exmaples/MAT_READ_BED for an example.
-+ BED FILE P: A bed file containing the mapping location of paternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to refrence genome, there will be mapping bias. Please see input_file_exmaples/PAT_READ_BED for an example.
++ FILE B: output file from AlleleHMM.py **AlleleHMM_output_[STRAND]_regions_t[TAO].bed**. Can also be any bed file containing regions to perform binomial tests.
++ FILE M: a bed file containing the mapping location of maternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to the refrence genome directly, there will be mapping bias. Please see input_file_exmaples/MAT_READ_BED for an example.
++ FILE P: a bed file containing the mapping location of paternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to the refrence genome directly, there will be mapping bias. Please see input_file_exmaples/PAT_READ_BED for an example.
 
 ### Output files
-
++ AlleleHMM_output_[STRAND]_regions_t[TAO]_binomtest.bed : contains the binomial test p-value of all candidate allele-specific AlleleHMM blocks.
++ AlleleHMM_output_[STRAND]_regions_t[TAO]_binomtest_FDR.txt : contain the FDR cut off value of p-value.
++ AlleleHMM_output_[STRAND]_regions_t[TAO]_binomtest_SigBlocks.bed : contains the allele-specific AlleleHMM blocks that are significantly biased. (default FDR <= 10%)
