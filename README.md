@@ -7,6 +7,10 @@ The key goal of AlleleHMM is to identify allele-specific blocks of signal in dis
 
 <img src="AlleleHMM.png">
 
+## Install
+```````
+git clone https://github.com/Danko-Lab/AlleleHMM.git
+```````
 ## AlleleHMM.py 
 ### Usage
 ```````
@@ -87,6 +91,11 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
     P= [p_m, p_s, p_p]
     ```````
 ## BinomialTest.bsh
+### Dependencies: 
+- [ ] bedtools
+- [x] BinomialTestForBed.py (Provided)
+- [x] FalsePosForBed.py (Provided)
+
 ### Usage
 ```````
 Perform binomial tests in the genomic regions specified in BinomTest_BED file (-b)
