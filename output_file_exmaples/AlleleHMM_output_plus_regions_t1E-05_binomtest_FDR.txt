@@ -1,4 +1,4 @@
-# FalsePosFor_merged_cov.bed.py AlleleHMM_output_plus_regions_t1E-05_binomtest.bed 20 0.1
+# FalsePosForBed.py AlleleHMM_output_plus_regions_t1E-05_binomtest.bed 20 0.1
 pval	P	FP	FDR
 0.000000	0	0.000000	0.000000
 0.001000	9	0.000000	0.000000

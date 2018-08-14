@@ -417,7 +417,7 @@ def run_em_T_mp_fixed(t, max_iter = ITER):
         p_Y_f_list.append(p_Y_f)
         new_T_list.append(new_T)
         new_P_list.append(new_P)
-    make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str('%.0E' %t)+", Tsx allow change for EM", prefix+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str('%.0E' %t)+".pdf")
+    #make_em_plot(p_Y_f_list,"count_min=1 Tmx, Tpx fixed, t="+str('%.0E' %t)+", Tsx allow change for EM", prefix+"_em_p_Y_f_list_plot_count_min=1_Tmpfixed_t="+str('%.0E' %t)+".pdf")
     with open(prefix+"_t="+str('%.0E' %t)+'_parameters.txt', 'w') as out:
         out.write("T="+str(new_T_list[-1])+"\n")
         out.write("P="+str(new_P_list[-1])+"\n")
@@ -457,7 +457,7 @@ def prediction(t):
     print "T", new_T
     print "P", new_P
     if input_i+input_m+input_p==1 : #counts_minus_hmm == "-":
-        hmm_prediction(counts_plus_hmm, " ", t,new_T, new_P)
+        hmm_prediction(counts_plus_hmm, ".", t,new_T, new_P)
     else:
         hmm_prediction(counts_plus_hmm, "+", t,new_T, new_P)
         hmm_prediction(counts_minus_hmm, "-", t,new_T, new_P)
