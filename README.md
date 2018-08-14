@@ -113,9 +113,15 @@ Optional operations:
 -fs    Number of similation for FDR test [default=20]
 -fc    FDR cut off value [default=0.1]
 ```````
-
-
-
-
+Examples:
++ For strand-specific data such as PRO-seq
+    ```````
+    bash BinomialTest.bsh -b AlleleHMM_output_plus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    bash BinomialTest.bsh -b AlleleHMM_output_minus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    ```````
++ For non-strand-specific data such as ChIP-seq
+    ```````
+    bash BinomialTest.bsh -ns -b AlleleHMM_output_both_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    ```````
 
 
