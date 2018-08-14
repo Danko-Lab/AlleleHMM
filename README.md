@@ -123,5 +123,10 @@ Examples:
     ```````
     bash BinomialTest.bsh -ns -b AlleleHMM_output_both_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
     ```````
+### Input files
++ BED FILE B: Output file from AlleleHMM.py **AlleleHMM_output_[STRAND]_regions_t[TAO].bed**. Can also be any bed file containing regions to perform binomial tests.
++ BED FILE M: A bed file containing the mapping location of maternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to refrence genome, there will be mapping bias. Please see input_file_exmaples/MAT_READ_BED for an example.
++ BED FILE P: A bed file containing the mapping location of paternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to refrence genome, there will be mapping bias. Please see input_file_exmaples/PAT_READ_BED for an example.
 
+### Output files
 
