@@ -1,11 +1,14 @@
 # AlleleHMM
-The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias.
+The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias. We last calculated the coverage of allele-specific reads count in each predicted AlleleHMM block and performed a binomial test to examine if the block is significantly biased toward maternal or paternal transcription. The last binomial test was performed to eliminate the false positives resulted from multiple counts of a single read that mapped to multiple nearby SNPs.
 
-AlleleHMM.py identifies candidate allele-specific blocks using 9 values of tao (1E-01, 1E-02, ...,1E-09) by default. The user can assign a specific tao using -t option.
+
++ AlleleHMM.py - identifies candidate allele-specific AlleleHMM blocks
++ BinomialTest.bsh - calculates the coverage of allele-specific reads count in each predicted AlleleHMM block and performed a binomial test to examine if the block is significantly biased toward maternal or paternal transcription
 
 <img src="AlleleHMM.png">
 
-## Usage
+## AlleleHMM.py 
+### Usage
 ```````
 python AlleleHMM.py [options]
 
@@ -39,7 +42,7 @@ python AlleleHMM.py -p AlleleHMM_input_plus.txt -m AlleleHMM_input_minus.txt
 python AlleleHMM.py -i AlleleHMM_input.txt
 ```````
 
-## Input files
+### Input files
 
 AlleleHMM takes the allele-specific read counts file in the following formats, please note that:
 + Please use tab delimited text file
@@ -61,7 +64,7 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
     ```````
 
 
-## Output files
+### Output files
 + Please see examples in the output_file_exmaples folder.
 + AlleleHMM_output_[STRAND]_regions_t[TAO].bed: candidate blocks of signal with allelic bias in bed file format.
     * Col1: Chromosome name, sorted by dictionary-order
@@ -83,5 +86,47 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
       [t_pm t_ps t_pp]]
     P= [p_m, p_s, p_p]
     ```````
+## BinomialTest.bsh
+### Usage
+```````
+Perform binomial tests in the genomic regions specified in file B (-b)
+using the mapping location of allele-specific reads in file M (-m) and P (-p)
+Reads need to map to diploid genomes, and then liftOver to the reference genome
 
+Requirements in current working directory:
+BinomialTestFor_merged_cov.bed.py, FalsePosFor_merged_cov.bed.py
+
+bash BinomialTest.bsh [options] -b <FILE B> -m <FILE M> -p <FILE P>
+
+options:
+To get help:
+-h, --help             Show this brief help menu.
+
+Required options:
+-b     BED file B. Path to a bed file containing regions to perform binomial tests
+-m     BED file M. Path to a bed file containing the mapping location of maternal specific reads (liftOver to reference genome)
+-p     BED file P. Path to a bed file containing the mapping location of paternal specific reads (liftOver to reference genome)
+
+Optional operations:
+-i     BED file I. Path to a bed file containing the mapping location of reads that cannot tell which allele it mapps to
+-ns    Non-strand-specific analysis. Report hits in file M, P, or I that overlap file B regardless of the strand. Strandedness is forced by default. [default=off]
+-fs    Number of similation for FDR test [default=20]
+-fc    FDR cut off value [default=0.1]
+```````
+Examples:
++ For strand-specific data such as PRO-seq
+    ```````
+    bash BinomialTest.bsh -b AlleleHMM_output_plus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    bash BinomialTest.bsh -b AlleleHMM_output_minus_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    ```````
++ For non-strand-specific data such as ChIP-seq
+    ```````
+    bash BinomialTest.bsh -ns -b AlleleHMM_output_both_regions_t1E-05.bed -m MAT_READ_BED -p PAT_READ_BED
+    ```````
+### Input files
++ BED FILE B: Output file from AlleleHMM.py **AlleleHMM_output_[STRAND]_regions_t[TAO].bed**. Can also be any bed file containing regions to perform binomial tests.
++ BED FILE M: A bed file containing the mapping location of maternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to refrence genome, there will be mapping bias. Please see input_file_exmaples/MAT_READ_BED for an example.
++ BED FILE P: A bed file containing the mapping location of paternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to refrence genome, there will be mapping bias. Please see input_file_exmaples/PAT_READ_BED for an example.
+
+### Output files
 
