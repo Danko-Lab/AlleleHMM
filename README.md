@@ -1,8 +1,9 @@
 # AlleleHMM
-The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias.
+The key goal of AlleleHMM is to identify allele-specific blocks of signal in distributed functional genomic data assuming that contiguous genomic regions share correlated allele-specific events. We developed a HMM that represents allelic bias in a distributed genomic mark using three hidden states: symmetric (S) distribution of the mark from both parental alleles (which shows no allelic bias), and maternally- (M) or paternally-biased (P) regions. AlleleHMM takes read counts corresponding to each allele as input. AlleleHMM uses these allele-specific read counts to set the parameters of the HMM using Baum Welch expectation maximization. The Viterbi algorithm is then used to identify the most likely hidden states through the data, resulting in a series of candidate blocks of signal with allelic bias. We last calculated the coverage of allele-specific reads count in each predicted AlleleHMM block and performed a binomial test to examine if the block is significantly biased toward maternal or paternal transcription. The last binomial test was performed to eliminate the false positives resulted from multiple counts of a single read that mapped to multiple nearby SNPs.
 
-+ AlleleHMM.py - identifies candidate allele-specific blocks
-+ BinomialTest.bsh - performs Binomial tests on those candidate allele-specific blocks, and output AlleleHMM blocks with significantly allele-biased (FDR<= 10%).
+
++ AlleleHMM.py - identifies candidate allele-specific AlleleHMM blocks
++ BinomialTest.bsh - calculates the coverage of allele-specific reads count in each predicted AlleleHMM block and performed a binomial test to examine if the block is significantly biased toward maternal or paternal transcription
 
 <img src="AlleleHMM.png">
 
