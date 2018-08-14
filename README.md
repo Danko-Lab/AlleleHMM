@@ -87,4 +87,35 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
     P= [p_m, p_s, p_p]
     ```````
 ## BinomialTest.bsh
+### Usage
+```````
+Perform binomial tests in the genomic regions specified in file B (-b)
+using the mapping location of allele-specific reads in file M (-m) and P (-p)
+Reads need to map to diploid genomes, and then liftOver to the reference genome
+
+Requirements in current working directory:
+BinomialTestFor_merged_cov.bed.py, FalsePosFor_merged_cov.bed.py
+
+bash BinomialTest.bsh [options] -b <FILE B> -m <FILE M> -p <FILE P>
+
+options:
+To get help:
+-h, --help             Show this brief help menu.
+
+Required options:
+-b     BED file B. Path to a bed file containing regions to perform binomial tests
+-m     BED file M. Path to a bed file containing the mapping location of maternal specific reads (liftOver to reference genome)
+-p     BED file P. Path to a bed file containing the mapping location of paternal specific reads (liftOver to reference genome)
+
+Optional operations:
+-i     BED file I. Path to a bed file containing the mapping location of reads that cannot tell which allele it mapps to
+-ns    Non-strand-specific analysis. Report hits in file M, P, or I that overlap file B regardless of the strand. Strandedness is forced by default. [default=off]
+-fs    Number of similation for FDR test [default=20]
+-fc    FDR cut off value [default=0.1]
+```````
+
+
+
+
+
 
