@@ -10,12 +10,11 @@ while test $# -gt 0; do
       echo "Requirements in current working directory:"
       echo "BinomialTestFor_merged_cov.bed.py, FalsePosFor_merged_cov.bed.py"
       echo ""
-            echo "bash BinomialTest.bsh [options] -b <FILE B> -m <FILE M> -p <FILE P>"
-            echo " "
-      echo "options:"
+      echo "bash BinomialTest.bsh [options] -b <FILE B> -m <FILE M> -p <FILE P>"
       echo " "
-            echo "To get help:"
-            echo "-h, --help             Show this brief help menu."
+      echo "options:"
+      echo "To get help:"
+      echo "-h, --help             Show this brief help menu."
       echo " "
       echo "Required options:"
       echo "-b     BED file B. Path to a bed file containing regions to perform binomial tests"
@@ -162,12 +161,12 @@ wait
 join -t $'\t' -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.8,2.8 ${j}.mat_cov.bed ${j}.pat_cov.bed > ${j}.temp_cov.bed
 join -t $'\t' -j 1 -o 1.2,1.3,1.4,1.5,1.6,1.7,2.8 ${j}.temp_cov.bed ${j}.iden_cov.bed | LC_ALL=C sort -k1,1V -k2,2n --parallel=30 > ${j}.merged_cov.bed
 rm ${j}.temp_cov.bed ${j}.mat_cov.bed ${j}.pat_cov.bed ${j}.iden_cov.bed
-python BinomialTestFor_merged_cov.bed.py ${j}.merged_cov.bed ${j}.merged_cov_binomtest.bed
+python BinomialTestFor_merged_cov.bed.py ${j}.merged_cov.bed ${j}_binomtest.bed
 rm ${j}.merged_cov.bed
 
 # output of BinomialTestFor_merged_cov.bed.py:(hmm+BinomialTest) if p-value <= 0.05, remain what it got from hmm (can ne M,P, or S), otherwise S.
-python FalsePosFor_merged_cov.bed.py ${j}.merged_cov_binomtest.bed ${FDR_SIMS} ${FDR_CUTOFF} > ${j}.merged_cov_binomtest_FDR.txt
-awk 'NR==1 { print $0 } NR>1 && $9 <= thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}.merged_cov_binomtest_FDR.txt) < ${j}.merged_cov_binomtest.bed > ${j}_interestingHets.bed
+python FalsePosFor_merged_cov.bed.py ${j}_binomtest.bed ${FDR_SIMS} ${FDR_CUTOFF} > ${j}_binomtest_FDR.txt
+awk 'NR==1 { print $0 } NR>1 && $9 <= thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}_binomtest_FDR.txt) < ${j}_binomtest.bed > ${j}_binomtest_SigBlocks.bed
 
 if [ -f ${PAT_READ_BED}_i_temp.bed ]; then
 rm ${PAT_READ_BED}_i_temp.bed
