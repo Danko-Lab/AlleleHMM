@@ -45,7 +45,7 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
 + Please use tab delimited text file
 + Must have header at the first line and only the first line.
 + SNP position (snppos) must be sorted according to genomic location. 
-+ Please see full example of AlleleHMM_input.txt in input_file_examples folder.
++ Please see examples in the input_file_examples folder.
 
     ```````
     chrm    snppos  mat_allele_count        pat_allele_count        total_reads_count       state
@@ -62,6 +62,7 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
 
 
 ## Output files
++ Please see examples in the output_file_exmaples folder.
 + AlleleHMM_output_[STRAND]_regions_t[TAO].bed: candidate blocks of signal with allelic bias in bed file format.
     * Col1: Chromosome name, sorted by dictionary-order
     * Col4: hidden states
