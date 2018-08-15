@@ -81,9 +81,9 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
     chr1    569093  569094  M       111     +
     chr1    569932  16971948        S       111     +
     ```````
-+ AlleleHMM_output_t=[TAO]_parameters.txt: Optimized transition probability and expected materal reads fraction of three states (M,P,S) using AlleleHMM. 
++ AlleleHMM_output_t=[TAO]_parameters.txt: Optimized transition probability and expected maternal reads fraction of three states (M,P,S) using AlleleHMM. 
     * t_ij: transition probability from state i to state j
-    * p_i: expected materal reads fraction of state i.v
+    * p_i: expected maternal reads fraction of state i.v
     ```````
     T=[[t_mm t_ms t_mp]
       [t_sm t_ss t_sp]
@@ -118,7 +118,7 @@ Required options:
 
 Optional operations:
 -i,--IDENTICAL_READ_BED=PATH   Path to a bed file containing the mapping location of reads that cannot tell which allele it mapps to
--fs,--FDR_SIMS=INT             Number of similation for FDR test [default=20]
+-fs,--FDR_SIMS=INT             Number of simulation for FDR test [default=20]
 -fc,--FDR_CUTOFF=FLOAT         FDR cut off value [default=0.1]
 -ns                            Non-strand-specific analysis. Report hits in MAT_READ_BED, PAT_READ_BED, and IDENTICAL_READ_BED that overlap BinomTest_BED regardless of the strand. Strandedness is forced by default. [default=off]
 ```````
@@ -134,8 +134,8 @@ Examples:
     ```````
 ### Input files
 + BinomTest_BED: output file from AlleleHMM.py **AlleleHMM_output_[STRAND]_regions_t[TAO].bed**. Can also be any bed file containing regions to perform binomial tests.
-+ MAT_READ_BED: a bed file containing the mapping location of maternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to the refrence genome directly, there will be mapping bias. Please see input_file_exmaples/MAT_READ_BED for an example.
-+ PAT_READ_BED: a bed file containing the mapping location of paternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to the refrence genome directly, there will be mapping bias. Please see input_file_exmaples/PAT_READ_BED for an example.
++ MAT_READ_BED: a bed file containing the mapping location of maternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to the reference genome directly, there will be mapping bias. Please see input_file_exmaples/MAT_READ_BED for an example.
++ PAT_READ_BED: a bed file containing the mapping location of paternal specific reads. Reads need to map to diploid genomes, and then liftOver to the reference genome. If map to the reference genome directly, there will be mapping bias. Please see input_file_exmaples/PAT_READ_BED for an example.
 
 ### Output files
 + AlleleHMM_output_[STRAND]_regions_t[TAO]_binomtest.bed : contains the binomial test p-value of all candidate allele-specific AlleleHMM blocks.
