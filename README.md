@@ -120,7 +120,7 @@ Optional operations:
 -i,--IDENTICAL_READ_BED=PATH   Path to a bed file containing the mapping location of reads that cannot tell which allele it mapps to
 -fs,--FDR_SIMS=INT             Number of similation for FDR test [default=20]
 -fc,--FDR_CUTOFF=FLOAT         FDR cut off value [default=0.1]
--ns                            Non-strand-specific analysis. Report hits in file M, P, or I that overlap file B regardless of the strand. Strandedness is forced by default. [default=off]
+-ns                            Non-strand-specific analysis. Report hits in MAT_READ_BED, PAT_READ_BED, and IDENTICAL_READ_BED that overlap BinomTest_BED regardless of the strand. Strandedness is forced by default. [default=off]
 ```````
 Examples:
 + For strand-specific data such as PRO-seq
