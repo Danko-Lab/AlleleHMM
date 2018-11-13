@@ -52,7 +52,7 @@ def help_message():
 #h_message='python AlleleHMM.py -h'
 
 try:
-   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao=", "output_prefix="])
+   opts, args = getopt.getopt(sys.argv[1:],"ht:p:m:i:o:",["input_hmm=","input_plus_hmm=","input_minus_hmm=", "predict=", "tao=", "output_prefix="])
    if len(opts)== 0:
       help_message()
       sys.exit(2)
