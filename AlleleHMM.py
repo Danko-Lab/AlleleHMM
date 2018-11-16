@@ -17,7 +17,7 @@ counts_minus_hmm = "-"
 predict=False
 tao = "default"
 prefix="AlleleHMM_output"
-ITER=10 # number of iteration
+ITER=30 # number of iteration
 
 def help_message():
     print "python AlleleHMM.py [options]"
@@ -93,20 +93,8 @@ if (i+p+m) <1 or (i+p > 1) or (i+p+m >2) or (p != m):
    help_message()
    sys.exit()
 
-if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
+if p==0 and i==1:
       counts_plus_hmm = counts_hmm
-
-#if prefix == "":
-#   if p==0 and i==1: # only one input, prefix is the part that remove ".txt"
-#      counts_plus_hmm = counts_hmm
-#      prefix='.'.join(counts_plus_hmm.split(".")[0:-1])
-#   else:
-#      temp=counts_plus_hmm.split("plus") 
-#      temp[-1] = temp[-1].split(".")[0]
-#      for i in xrange(len(temp)):
-#         temp[i]=temp[i].strip("_")
-#      prefix='_'.join(temp)
-#      prefix = prefix.strip("_")
 
 
 print 'output prefix:\t', prefix
