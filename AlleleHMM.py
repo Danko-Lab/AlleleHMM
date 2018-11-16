@@ -17,7 +17,7 @@ counts_minus_hmm = "-"
 predict=False
 tao = "default"
 prefix="AlleleHMM_output"
-ITER=30 # number of iteration
+ITER=10 # number of iteration
 
 def help_message():
     print "python AlleleHMM.py [options]"
@@ -180,7 +180,7 @@ def binomtest(x, n, p):
         binomtest_dic[(x,n,p)] = scipy.stats.binom_test(x, n, p)
     return binomtest_dic[(x,n,p)]
 
-def viterbi (p, T, x=mat, n=total):
+def viterbi (p, T, x, n):
     v = np.full((3, len(x)), float('-inf'))
     b = np.full((3, len(x)), int(3), dtype=int)
     #Initialization
@@ -353,11 +353,11 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
         data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v = f_data_dic[f_v]
     else:
         data_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=range(0,6), skiprows=1)
-        chrom_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[0], skiprows=1)
-        snppos_v = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[1], skiprows=1)
-        mat_v  = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-        total_v = np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-        state_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+        chrom_v=data_v[:,0] # np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[0], skiprows=1)
+        snppos_v = data_v[:,1].astype(int) #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[1], skiprows=1)
+        mat_v  = data_v[:,2].astype(int)   #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+        total_v = data_v[:,4].astype(int)  #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+        state_v = data_v[:,5] #np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
         n_state_v = np.full(len(state_v), int(3), dtype=int)
         n_state_v[state_v=="M"] = 0
         n_state_v[state_v=="S"] = 1
