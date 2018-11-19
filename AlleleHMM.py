@@ -353,6 +353,7 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
         f_data_dic[f_v]=[data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v]
     
     v_path=[]
+    c_path=[]
     chrom_list= list(set(chrom_v))
     chrom_list.sort()
     
@@ -360,13 +361,15 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
         t_c = total_v[chrom_v == i]
         x_c = mat_v[chrom_v == i]
         v_path += (list(viterbi (x=x_c, n=t_c, p=new_P, T=new_T)))
+        c_path.extend([i]*len(x_c))
     
+    c_path=np.array(c_path)
     # output regions with neighbor sharing the same states as a bed file
     state_map = {0:'M', 1:'S', 2:'P'}
     region_list=[]
     for c in chrom_list:
         snppos_c = snppos_v[chrom_v == c]
-        v_path_c = np.array(v_path)[chrom_v == c]
+        v_path_c = np.array(v_path)[c_path == c]
         u = snppos_c[0]
         for l in xrange(1,len(v_path_c)):
             if v_path_c[l] != v_path_c[l-1]:
