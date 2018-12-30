@@ -1,0 +1,1 @@
+/Users/shaopei/Box Sync/Danko_lab_work/mouse_AlleleDB/hmm/simulation/AlleleHMM_Binomial_sim.R
