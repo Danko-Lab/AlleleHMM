@@ -1,0 +1,33 @@
+Min_count=1
+Max_Pvalue=1
+
+#locations of pipeline
+PL=/workdir/sc2457/tools/After_AlleleDB_pipeline
+#PREFIX=SRR1552485_total
+PREFIX=$1
+
+cd /local/workdir/sc2457/SeqDepth_AlleleHMM_performance_test_6/${PREFIX}/allelicbias-NA12878_hg19_150109_w_transcriptome-${PREFIX}
+  # only anaysis autosome now
+  grep -v X counts_plus.txt > ${PREFIX}_counts_plus_noX.txt 
+  grep -v X counts_minus.txt > ${PREFIX}_counts_minus_noX.txt
+  R --vanilla --slave --args $(pwd) ${PREFIX}_counts_plus_noX.txt ${Min_count} ${Max_Pvalue} < ${PL}/filter_counts_file.R 
+  R --vanilla --slave --args $(pwd) ${PREFIX}_counts_minus_noX.txt ${Min_count} ${Max_Pvalue} < ${PL}/filter_counts_file.R 
+
+  Input_counts_plus=${PREFIX}_counts_plus_noX_MinCount${Min_count}_MaxPvalue${Max_Pvalue}.txt
+  Input_counts_minus=${PREFIX}_counts_minus_noX_MinCount${Min_count}_MaxPvalue${Max_Pvalue}.txt
+
+  # use for hmm
+  # $18 0.5 <= CNV <= 1.5
+  p_value=0.05
+
+  head ${Input_counts_plus} -n 1 |awk 'BEGIN{OFS="\t"} {print $1,$2,$19, $20, $21, "state"}' > ${PREFIX}_counts_plus_hmm.txt 
+  cat ${Input_counts_plus} |\
+  awk 'BEGIN{OFS="\t"} ($18 <1.5 && $18 >0.5) {print $1,$2,$19, $20, $21,$14,$15,$16}' |\
+  awk -v p=$p_value 'BEGIN{OFS="\t"} ($8 <p) {print $1,$2,$3, $4, $5, $6}; ($8 >=p){print $1,$2,$3, $4, $5, "S"}' >> ${PREFIX}_counts_plus_hmm.txt 
+
+  head ${Input_counts_minus} -n 1 |awk 'BEGIN{OFS="\t"} {print $1,$2,$19, $20, $21, "state"}' > ${PREFIX}_counts_minus_hmm.txt 
+  cat ${Input_counts_minus} |\
+  awk 'BEGIN{OFS="\t"} ($18 <1.5 && $18 >0.5) {print $1,$2,$19, $20, $21,$14,$15,$16}' |\
+  awk -v p=$p_value 'BEGIN{OFS="\t"} ($8 <p) {print $1,$2,$3, $4, $5, $6}; ($8 >=p){print $1,$2,$3, $4, $5, "S"}' >> ${PREFIX}_counts_minus_hmm.txt 
+  
+  python AlleleHMM.py -p ${PREFIX}_counts_plus_hmm.txt -m ${PREFIX}_counts_minus_hmm.txt -o ${PREFIX}

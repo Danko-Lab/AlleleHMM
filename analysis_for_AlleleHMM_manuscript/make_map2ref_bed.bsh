@@ -1,0 +1,46 @@
+PREFIX=$1
+PL=/workdir/sc2457/alleleDB/alleledb_pipeline
+MAPS=/workdir/sc2457/alleleseq.gersteinlab.org/NA12878_diploid/NA12878_diploid_2015_feb5_3versions/1kgp3-svs-pass_NA12878_hg19_150109_w_transcriptome/%s_NA12878.map
+MATBOWTIE=${PREFIX}.mat.bowtie
+PATBOWTIE=${PREFIX}.pat.bowtie
+FDR_SIMS=10
+FDR_CUTOFF=0.1
+
+cd /local/workdir/sc2457/SeqDepth_AlleleHMM_performance_test_6/${PREFIX}/allelicbias-NA12878_hg19_150109_w_transcriptome-${PREFIX}
+
+# remove AMB reads and sort by index
+python ${PL}/filter_reads_out.py ${PATBOWTIE} - originalmatpatreads.toremove.ids | LC_ALL=C  sort -k1 -n  --parallel=30 -o ${PATBOWTIE}_AMBremoved_sorted &
+python ${PL}/filter_reads_out.py ${MATBOWTIE} - originalmatpatreads.toremove.ids | LC_ALL=C  sort -k1 -n  --parallel=30 -o ${MATBOWTIE}_AMBremoved_sorted &
+wait
+
+# seperate mat and pat reads from bowtie output
+# order matters! ${PATBOWTIE}_AMBremoved_sorted need to be in front of ${MATBOWTIE}_AMBremoved_sorted !!!
+python ${PL}/seperate_mat_pat_reads_withSNPs.py ${PATBOWTIE}_AMBremoved_sorted ${MATBOWTIE}_AMBremoved_sorted ${MAPS}
+# output is ${PATBOWTIE}_AMBremoved_sorted_specific.bowtie ${PATBOWTIE}_AMBremoved_sorted_identical.bowtie ${MATBOWTIE}_AMBremoved_sorted_specific.bowtie ${MAPS}
+
+cat ${MATBOWTIE}_AMBremoved_sorted_specific.bowtie | awk 'BEGIN {FS= "\t"; OFS="\t"; t="#*o*#"} {print $3, $4, $4+length($5), $1t$5t$2t$6, 111, $2}' > ${MATBOWTIE}_AMBremoved_sorted_specific.bed &
+cat ${PATBOWTIE}_AMBremoved_sorted_specific.bowtie | awk 'BEGIN {FS= "\t"; OFS="\t"; t="#*o*#"} {print $3, $4, $4+length($5), $1t$5t$2t$6, 111, $2}' > ${PATBOWTIE}_AMBremoved_sorted_specific.bed &
+cat ${PATBOWTIE}_AMBremoved_sorted_identical.bowtie| awk 'BEGIN {FS= "\t"; OFS="\t"; t="#*o*#"} {print $3, $4, $4+length($5), $1t$5t$2t$6, 111, $2}' > ${PATBOWTIE}_AMBremoved_sorted_identical.bed &
+wait
+rm  ${MATBOWTIE}_AMBremoved_sorted_specific.bowtie ${PATBOWTIE}_AMBremoved_sorted_specific.bowtie ${PATBOWTIE}_AMBremoved_sorted_identical.bowtie ${PATBOWTIE}_AMBremoved_sorted_skipped.bowtie
+# liftOver to reference genome
+# usage: liftOver oldFile map.chain newFile unMapped
+# rm pat2ref.chain mat2ref.chain
+ln -s 2-map.back.ref-${PREFIX}/pat2ref.chain .  #pat2ref.chain is from output of AlleleDB
+ln -s 2-map.back.ref-${PREFIX}/mat2ref.chain .
+liftOver ${MATBOWTIE}_AMBremoved_sorted_specific.bed mat2ref.chain  ${MATBOWTIE}_AMBremoved_sorted_specific.map2ref.bed ${MATBOWTIE}_AMBremoved_sorted_specific.unmap2ref.log &
+liftOver ${PATBOWTIE}_AMBremoved_sorted_specific.bed pat2ref.chain  ${PATBOWTIE}_AMBremoved_sorted_specific.map2ref.bed ${PATBOWTIE}_AMBremoved_sorted_specific.unmap2ref.log &
+liftOver ${PATBOWTIE}_AMBremoved_sorted_identical.bed pat2ref.chain  ${PATBOWTIE}_AMBremoved_sorted_identical.map2ref.bed ${PATBOWTIE}_AMBremoved_sorted_identical.unmap2ref.log &
+wait
+cat ${PATBOWTIE}_AMBremoved_sorted_identical.map2ref.bed | LC_ALL=C sort -k1,1V -k2,2n --parallel=30 |awk '{print "chr"$0}' |gzip > ${PATBOWTIE}_AMBremoved_sorted_identical.map2ref.sorted.bed.gz &
+
+# remove reads that DONOT overlape with a SNP in ${PATBOWTIE}_AMBremoved_sorted_specific.map2ref.sorted.bed and  ${MATBOWTIE}_AMBremoved_sorted_specific.map2ref.sorted.bed 
+intersectBed -sorted -u -a <(LC_ALL=C sort -k1,1V -k2,2n --parallel=30 ${MATBOWTIE}_AMBremoved_sorted_specific.map2ref.bed |awk '{print "chr"$0}') \
+-b /workdir/sc2457/SNP/1000genome_vol1.ftp.release.20130502/snp.calls.bed |gzip > ${MATBOWTIE}_AMBremoved_sorted_specific.map2ref.sorted.bed.gz &
+intersectBed -sorted -u -a <(LC_ALL=C sort -k1,1V -k2,2n --parallel=30 ${PATBOWTIE}_AMBremoved_sorted_specific.map2ref.bed |awk '{print "chr"$0}') \
+-b /workdir/sc2457/SNP/1000genome_vol1.ftp.release.20130502/snp.calls.bed |gzip > ${PATBOWTIE}_AMBremoved_sorted_specific.map2ref.sorted.bed.gz &
+wait
+
+
+rm ${MATBOWTIE}_AMBremoved_sorted_specific.bed ${PATBOWTIE}_AMBremoved_sorted_specific.bed ${PATBOWTIE}_AMBremoved_sorted_identical.bed
+rm ${PATBOWTIE}_AMBremoved_sorted_specific.map2ref.bed ${MATBOWTIE}_AMBremoved_sorted_specific.map2ref.bed ${PATBOWTIE}_AMBremoved_sorted_identical.map2ref.bed

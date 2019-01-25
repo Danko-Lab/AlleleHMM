@@ -1,0 +1,24 @@
+PREFIX=$1
+cd /workdir/sc2457/SeqDepth_AlleleHMM_performance_test_6/${PREFIX}/allelicbias-NA12878_hg19_150109_w_transcriptome-${PREFIX}
+ln -s /workdir/sc2457/SeqDepth_AlleleHMM_performance_test_6/AlleleHMM/* .      #*/
+for f in *map2ref.sorted.bed.gz
+do gzip -d $f &
+done
+
+for T in {1..9}
+  do 
+cat ${PREFIX}_plus_regions_t1E-0${T}.bed | LC_ALL=C sort -k1,1n -k2,2n |awk '{print "chr"$0}' > ${PREFIX}_plus_regions_t1E-0${T}.sorted.bed &
+cat ${PREFIX}_minus_regions_t1E-0${T}.bed | LC_ALL=C sort -k1,1n -k2,2n |awk '{print "chr"$0}' > ${PREFIX}_minus_regions_t1E-0${T}.sorted.bed &
+done
+wait 
+MAT_READ_BED=${PREFIX}.mat.bowtie_AMBremoved_sorted_specific.map2ref.sorted.bed
+PAT_READ_BED=${PREFIX}.pat.bowtie_AMBremoved_sorted_specific.map2ref.sorted.bed
+IDENTICAL_READ_BED=${PREFIX}.pat.bowtie_AMBremoved_sorted_identical.map2ref.sorted.bed
+
+for T in {1..9}
+  do
+bash BinomialTest.bsh -b ${PREFIX}_plus_regions_t1E-0${T}.sorted.bed -m ${MAT_READ_BED} -p ${PAT_READ_BED} -i ${IDENTICAL_READ_BED} 
+bash BinomialTest.bsh -b ${PREFIX}_minus_regions_t1E-0${T}.sorted.bed -m ${MAT_READ_BED} -p ${PAT_READ_BED} -i ${IDENTICAL_READ_BED} 
+done
+
+gzip *map2ref.sorted.bed &
