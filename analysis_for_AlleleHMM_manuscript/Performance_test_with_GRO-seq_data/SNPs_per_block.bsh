@@ -1,0 +1,26 @@
+# Sup_Fig10
+# SNPs (with at least 1 read mapped) per AlleleHMM blocks
+#GM
+T=5
+for s in plus minus
+do 
+intersectBed -sorted -wb -a <(cat counts_${s}.txt | awk '{OFS="\t"} (NR>1){print "chr"$1, $2-1, $2}') -b counts_${s}_hmm_regions_t1e-0${T}_interestingHets_IGV.bed |cut -f 4-8 |uniq -c > GM_counts_${s}_hmm_regions_t1e-0${T}_interestingHets_mappedSNP.txt
+done
+
+T=5
+for s in plus minus
+do 
+intersectBed -sorted -wb -a <(cat counts_${s}.txt | awk '{OFS="\t"} (NR>1){print "chr"$1, $2-1, $2}') -b SRR1552485_total_${s}_regions_t1E-0${T}.sorted_binomtest_SigBlocks_NoS.bed |cut -f 4-8 |uniq -c > SRR1552485_total_${s}_regions_t1E-0${T}.sorted_binomtest_SigBlocks_NoS_mappedSNP.txt
+done
+
+
+
+#F1
+T=5
+for s in plus minus
+do 
+intersectBed -sorted -wb -a <(cat ../counts_${s}.txt | awk '{OFS="\t"} (NR>1){print "chr"$1, $2-1, $2}') -b SRR4041366_total_${s}_regions_t1E-0${T}.sorted_binomtest_SigBlocks_NoS.bed |cut -f 4-8 |uniq -c > SRR4041366_total_${s}_regions_t1E-0${T}.sorted_binomtest_SigBlocks_NoS.bedmappedSNP.txt
+done
+
+
+R CMD BATCH SNPs_per_block.R

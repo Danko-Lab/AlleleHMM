@@ -1,0 +1,1 @@
+cat $1 | sed 's/chr/chr /' | sed 's/ M/ 25/' | sed 's/ X/ 23/' | sed 's/ Y/ 24/' | sort -k 2,2n -k 3,3n -k 4,4n | sed 's/chr 23/chrX/' | sed 's/chr 24/chrY/' | sed 's/chr 25/chrM/' | sed 's/chr /chr/'

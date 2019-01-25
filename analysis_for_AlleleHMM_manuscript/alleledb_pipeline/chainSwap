@@ -1,0 +1,153 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+##_use fralib;
+use Getopt::Long;
+use File::Basename;
+use Pod::Usage;
+
+=head1 NAME
+
+chainSwap
+
+=head1 SYNOPSIS
+
+ chainSwap [options] <UCSC chain file>
+
+  -h  help
+  
+  
+  this script takes in a UCSC format chain file and swap the query and reference information
+  
+  <UCSC chain file> format:
+  ---> header (space-delimited)
+  chain score tName tSize tStrand tStart tEnd qName qSize qStrand qStart qEnd id
+  score -- chain score
+	tName -- chromosome (reference sequence)
+	tSize -- chromosome size (reference sequence)
+	tStrand -- strand (reference sequence)
+	tStart -- alignment start position (reference sequence)
+	tEnd -- alignment end position (reference sequence)
+	qName -- chromosome (query sequence)
+	qSize -- chromosome size (query sequence)
+	qStrand -- strand (query sequence)
+	qStart -- alignment start position (query sequence)
+	qEnd -- alignment end position (query sequence)
+	id -- chain ID
+  
+  The alignment start and end positions are represented as zero-based half-open intervals. 
+  For example, the first 100 bases of a sequence would be represented with start position = 0 
+  and end position = 100, and the next 100 bases would be represented as start position = 100 
+  and end position = 200. When the strand value is "-", position coordinates are listed in terms 
+  of the reverse-complemented sequence.
+  
+  ---> Alignment Data Lines (space-delimited)
+  Alignment data lines contain three required attribute values:
+
+  size dt dq
+	size -- the size of the ungapped alignment
+	dt -- the difference between the end of this block and the beginning of the next block (reference sequence)
+	dq -- the difference between the end of this block and the beginning of the next block (query sequence)
+	
+	NOTE: The last line of the alignment section contains only one number: the ungapped alignment size of the last block.
+  
+  
+  example: chainSwap maternal.chain > mat2ref.chain
+        
+=head1 DESCRIPTION
+
+=cut
+
+my $help;
+my $ifile;
+my $ofile;
+my $pattern;
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('h'=>\$help) || scalar(@ARGV)!=1)
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+# read FASTA filename
+$ifile = $ARGV[0];
+open(IN, $ifile) || die "$ifile cannot be opened: $!";
+
+## loop chain file
+ITER:while(<IN>)
+{
+	chomp $_;
+	
+	# strip out >
+	s/^>//g; 
+	s/>$//g;
+	if (!length($_)) # skip if empty line
+	{
+		print "\n";
+		next;
+	}
+	
+	# capture header and strip it out
+	if($_ =~ /^chain/)
+	{
+		###		---> header (space-delimited)
+		###	  0 chain score tName tSize tStrand tStart tEnd qName qSize qStrand qStart qEnd id
+		###	  1 score -- chain score
+		###		2 tName -- chromosome (reference sequence)
+		###		3 tSize -- chromosome size (reference sequence)
+		###		4 tStrand -- strand (reference sequence)
+		###		5 tStart -- alignment start position (reference sequence)
+		###		6 tEnd -- alignment end position (reference sequence)
+		###		7 qName -- chromosome (query sequence)
+		###		8 qSize -- chromosome size (query sequence)
+		###		9 qStrand -- strand (query sequence)
+		###		10 qStart -- alignment start position (query sequence)
+		###		11 qEnd -- alignment end position (query sequence)
+		###		12 id -- chain ID	
+	
+		my @hf = split(/\s/, $_);
+		print "$hf[0] $hf[1] $hf[7] $hf[8] $hf[9] $hf[10] $hf[11] $hf[2] $hf[3] $hf[4] $hf[5] $hf[6] $hf[12]\n";
+		next;
+	}
+	else # data lines
+	{
+		###		---> Alignment Data Lines (tab-delimited)
+		###	  Alignment data lines contain three required attribute values:
+		###	
+		###	  size dt dq
+		###		size -- the size of the ungapped alignment
+		###		dt -- the difference between the end of this block and the beginning of the next block (reference sequence)
+		###		dq -- the difference between the end of this block and the beginning of the next block (query sequence)
+		
+		my @df = split(/\s/, $_);
+		
+		## middle lines
+		if($#df > 0)
+		{
+			print "$df[0] $df[2] $df[1]\n";
+		}
+		elsif($#df == 0)  ## last line
+		{
+			print "$df[0]\n";
+		}
+		else
+		{
+			die "$#df||$df[0]||shouldnt get here:$!";
+		}
+	}
+	
+
+}## end of one line 
+
+close(IN);
+

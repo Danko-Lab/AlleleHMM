@@ -1,0 +1,98 @@
+### subsample fastq files
+fastq-sample -p 0.5 -o SRR1552485_sub2 SRR1552485_total.fastq -s 100    
+fastq-sample -p 0.5 -o SRR1552485_sub4 SRR1552485_sub2.fastq -s 100  
+fastq-sample -p 0.5 -o SRR1552485_sub8 SRR1552485_sub4.fastq -s 100  
+fastq-sample -p 0.5 -o SRR1552485_sub16 SRR1552485_sub8.fastq -s 100  
+
+
+for f in SRR1552485_*.fastq
+do gzip $f
+done
+
+### Run AlleleDB
+
+
+### make input files for AlleleHMM.py and run AlleleHMM.py
+# SeqDepth_AlleleHMM_performance_test_Start_From_subsample_fastq.bsh
+for i in sub2 sub4 sub8 sub16 total
+  do
+  bash make_AlleleHMM_output_from_AlleleDB_output.bsh  SRR1552485_${i}
+done
+
+
+
+### use the bowtie output from AlleleDB to make allele-specific read mapping files (liftOver from personal genome to reference genome)
+for i in sub2 sub4 sub8 sub16 total
+  do 
+  bash make_map2ref_bed.bsh SRR1552485_${i} 
+done
+
+
+### Perform Binomial test in the AlleleHMM blocks
+for i in sub2 sub4 sub8 sub16 total
+  do 
+  bash BinoTest_SeqDepth.bsh SRR1552485_${i} > BinoTest_SRR1552485_${i}.log
+done
+
+
+### examine sensitivity, precision and specificity
+PREFIX=$1
+cd /workdir/sc2457/SeqDepth_AlleleHMM_performance_test_6/${PREFIX}/allelicbias-NA12878_hg19_150109_w_transcriptome-${PREFIX}
+
+j=gencode.v28lift37.annotation_geneMerged
+ln -s /workdir/sc2457/AlleleHMM_performance_test/gencode.v28lift37.annotation_geneMerged_withAllele-specificity_FDR.bed .
+## identify SNP with at least 1 reads, and within gene annotation_withAllele-specificity
+
+# SNPs (with at least 1 read mapped) covered by gene annotation_withAllele-specificity
+intersectBed -u -s -a <(cat ${PREFIX}_counts_plus_noX_MinCount1_MaxPvalue1.txt|  awk 'BEGIN{OFS="\t"} (NR>1){print "chr"$1, $2-1, $2,".",".","+"}') -b ${j}_withAllele-specificity_FDR.bed > SNP_plus_in_${j}_withAllele-specificity_FDR.bed
+intersectBed -u -s -a <(cat ${PREFIX}_counts_minus_noX_MinCount1_MaxPvalue1.txt|  awk 'BEGIN{OFS="\t"} (NR>1){print "chr"$1, $2-1, $2,".",".","-"}') -b ${j}_withAllele-specificity_FDR.bed > SNP_minus_in_${j}_withAllele-specificity_FDR.bed
+
+
+## annotate SNP with at least 1 reads, and within gene annotation, with gene allele-specificity
+for s in plus minus
+  do 
+    # SNPs (with at least 1 read mapped) covered by gene annotation_withAllele-specificity
+    intersectBed -wb -s -a SNP_${s}_in_${j}_withAllele-specificity_FDR.bed -b ${j}_withAllele-specificity_FDR.bed > SNP_${s}_geneAS
+done
+
+## annotate SNP with at least 1 reads, and within gene annotation, with AlleleDB allele-specificity
+for s in plus minus
+  do 
+    # SNPs (with at least 1 read mapped) covered by gene annotation_withAllele-specificity
+    intersectBed -wb -a SNP_${s}_in_${j}_withAllele-specificity_FDR.bed -b <(cat interestingHets_${s}.txt | awk 'BEGIN{OFS="\t"} NR>1 {print "chr"$1, $2-1, $2, $14}') | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6, $10}'> SNP_${s}_AlleleDB_temp
+    intersectBed -v  -a SNP_${s}_in_${j}_withAllele-specificity_FDR.bed -b <(cat interestingHets_${s}.txt | awk 'BEGIN{OFS="\t"} NR>1 {print "chr"$1, $2-1, $2, $14}') | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6, "S"}'>> SNP_${s}_AlleleDB_temp
+    cat SNP_${s}_AlleleDB_temp | LC_ALL=C sort -k1,1V -k2,2n --parallel=30 > SNP_${s}_AlleleDB
+    rm SNP_${s}_AlleleDB_temp 
+done
+
+## annotate SNP with at least 1 reads, and within gene annotation, with AlleleHMM allele-specificity
+for T in {1..9}
+  do
+  for s in plus minus
+    do 
+    intersectBed -wb -a SNP_${s}_in_${j}_withAllele-specificity_FDR.bed -b ${PREFIX}_${s}_regions_t1E-0${T}.sorted_binomtest_SigBlocks.bed | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6, $10}' > SNP_${s}_AlleleHMM_temp
+    intersectBed -v  -a SNP_${s}_in_${j}_withAllele-specificity_FDR.bed -b ${PREFIX}_${s}_regions_t1E-0${T}.sorted_binomtest_SigBlocks.bed | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6, "S"}' >> SNP_${s}_AlleleHMM_temp
+    cat SNP_${s}_AlleleHMM_temp | LC_ALL=C sort -k1,1V -k2,2n --parallel=30 > SNP_${s}_AlleleHMM_t1E-0${T}
+    rm SNP_${s}_AlleleHMM_temp
+  done
+done
+
+## make a matrix 
+for T in {1..9}
+  do
+echo -e '#chr\tchromStart\tchromEnd\tSNPreadCount\tvalue\tStrand\tgeneAS\tAlleleDB\tAlleleHMM\tgeneMat/Allele-specificReads\tgeneMat/TotalReads\tMAt\tPat\tIde' > ${PREFIX}_SNP_Allele_Specificity_matrix_t1E-0${T}.bed
+for s in plus minus
+  do 
+  cat SNP_${s}_geneAS | awk 'BEGIN {OFS="\t"; t="_"} {print $1t$2t$3t$6, $1,$2,$3,$4,$5,$6, $10, $13/($13+$14), $13/($13+$14+$15), $13, $14, $15 }' > SNP_${s}_matrix_temp_1
+  cat SNP_${s}_AlleleDB | awk 'BEGIN {OFS="\t"; t="_"} {print $1t$2t$3t$6, $7}' > SNP_${s}_matrix_temp_2
+  join -t $'\t' -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.2,1.9,1.10,1.11,1.12,1.13 SNP_${s}_matrix_temp_1 SNP_${s}_matrix_temp_2 > SNP_${s}_matrix_temp_3
+  cat SNP_${s}_AlleleHMM_t1E-0${T} | awk 'BEGIN {OFS="\t"; t="_"} {print $1t$2t$3t$6, substr($7,1,1)}' > SNP_${s}_matrix_temp_4
+  join -t $'\t' -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.2,1.10,1.11,1.12,1.13,1.14 SNP_${s}_matrix_temp_3 SNP_${s}_matrix_temp_4  > SNP_${s}_matrix_temp_5
+  cat SNP_${s}_matrix_temp_5 | awk 'BEGIN {OFS="\t"} {print $2,$3,$4,$5,$6,$7,$8,$9,$10, $11, $12, $13, $14, $15}' >>  ${PREFIX}_SNP_Allele_Specificity_matrix_t1E-0${T}.bed
+
+  rm SNP_${s}_matrix_temp_[12345]
+done 
+done
+
+
+## run AlleleHMM_Performamce_GRO-seq.R

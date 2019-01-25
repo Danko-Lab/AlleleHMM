@@ -1,0 +1,294 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+##_use fralib;
+use Getopt::Long;
+use File::Basename;
+use Pod::Usage;
+
+=head1 NAME
+
+fsieve
+
+=head1 SYNOPSIS
+
+ fsieve [options] <file>
+	
+  -v    verbose
+  -d    debug
+  -s    sieving file (required) 
+        [HEADER IS REQUIRED!, this header will be ignored by fsieve 
+        and is used to check if the file to be sieved is in the correct 
+        orientation]
+  -p    preserve order in sieving file
+  -o    output file (default is output to sieved-<genotype-file>)
+  -m    minus: extract all but the elements in sieve file (default is extract elements in sieve file)
+  -c    extract columns (default is extract rows)
+  file  tab delimited file
+  
+ example: fsieve -s paltum.mk -m pscalare.gt
+
+ (Extracts|Extracts all but) rows or columns with labels listed in sieve file.
+ Please note that the column label is ignored and not considered in the sieve.
+ 
+ Credit:
+ This is a script written by Adrian Tan, when he was at the Genome Institute of Singapore, as part of his package fraTools.
+ He is currently now at University of Michigan.
+ 
+=head1 DESCRIPTION
+
+=cut
+
+#option variables
+my $verbose;
+my $debug;
+my $help;
+my $sieveFile;
+my $preserveOrder;
+my $outFile;
+my $minus;
+my $sieveCols;
+my $fpos;
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('v'=>\$verbose,'d'=>\$debug, 'h'=>\$help, 's=s'=>\$sieveFile, 'p'=>\$preserveOrder,'o=s'=>\$outFile,'m'=>\$minus,'c'=>\$sieveCols)
+   || !defined($sieveFile) || scalar(@ARGV) != 1)
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+#data variables
+my %SIEVE;
+my @orderedSieveElements;
+my $sieveFileElementNo = 0;
+my $fileElementNo = 0;
+my $sievedElementNo = 0;
+
+my $genotypeFile = $ARGV[0];
+
+#check input formats
+##_if ((isGt($genotypeFile) && getHeader($sieveFile) eq 'sample-id' && $sieveCols) ||
+##_	(isGt($genotypeFile) && getHeader($sieveFile) eq 'snp-id' && !$sieveCols) ||
+##_	(isTg($genotypeFile) && getHeader($sieveFile) eq 'sample-id' && !$sieveCols) ||
+##_	(isTg($genotypeFile) && getHeader($sieveFile) eq 'snp-id' && $sieveCols))
+##_{
+##_	die "Sieving file not in correct orientation with respect to genotype file";
+##_}
+##_elsif (!isGtOrTg($genotypeFile))
+##_{
+##_	warn "Proceeding to sieve a non genotype file\n";
+##_}
+
+#process sieve list
+open(SIEVE, $sieveFile) || die "Cannot open $sieveFile\n";
+
+while (<SIEVE>)
+{
+	s/\r?\n?$//;
+	
+	if($.==1)
+	{
+	    my @fields = split('\t', $_, 2);
+	    
+	    warn "Sieve Column Label    : $fields[0]\n";
+	}
+	else
+	{
+		my @fields = split('\t', $_, 2);
+		
+		$SIEVE{$fields[0]}++;
+		if($preserveOrder)
+		{	
+			push(@orderedSieveElements, $fields[0]);
+		}
+	}
+}
+
+if ($.==0) {die "$sieveFile is empty"}
+if (scalar(keys(%SIEVE))!=$.-1) {warn "Duplicate values found in $sieveFile"}
+close(SIEVE);
+
+$sieveFileElementNo = scalar(keys(%SIEVE));
+
+if (!defined($outFile))
+{
+    my ($name, $path, $ext) = fileparse($genotypeFile, '\..*');
+	$outFile = "sieved-$name$ext";
+}
+open(OUT, ">$outFile") || die "Cannot open $outFile\n";
+open(IN, $genotypeFile) || die "Cannot open $genotypeFile\n";
+if($sieveCols)
+{
+	my $colNo;
+	my @desiredColumns;
+	my %colElements;
+	
+	while (<IN>)
+	{
+		s/\r?\n?$//;
+
+		if($.==1)
+		{	
+			$colNo = s/\t/\t/g + 1;
+			
+			my @fields = split('\t', $_, $colNo);	
+
+			#select required fields
+			if (!$minus && $preserveOrder)
+			{
+				for my $col (1 .. $#fields)
+				{
+					if(exists($SIEVE{$fields[$col]}))
+					{
+						$colElements{$fields[$col]} = $col;						
+					}
+				}
+				
+				for my $element (@orderedSieveElements)
+				{
+					if(exists($colElements{$element}))
+					{
+						push(@desiredColumns, $colElements{$element});
+					}
+				}
+			}
+			else
+			{
+				for my $col (1 .. $#fields)
+				{
+					if($minus xor exists($SIEVE{$fields[$col]}))
+					{
+						push(@desiredColumns, $col);
+					}
+				}
+			}			
+			
+			#print selected fields
+			print OUT "$fields[0]";
+			for my $col (@desiredColumns)
+			{
+				print OUT "\t$fields[$col]";
+			}
+			print OUT "\n";
+			
+			$fileElementNo = $colNo - 1;
+			$sievedElementNo = scalar(@desiredColumns);
+		}
+		else
+		{
+			my @fields = split('\t', $_, $colNo);
+
+			print OUT "$fields[0]";
+			for my $col (@desiredColumns)
+			{
+				print OUT "\t$fields[$col]";
+			}
+			print OUT "\n";
+		}
+	}
+}
+#sieve rows
+else
+{	
+	if ($preserveOrder)
+	{
+		my %rowElements;
+		my @desiredRows;
+		
+		while (<IN>)
+		{
+			s/\r?\n?$//;
+			my @fields = split('\t', $_, 2);
+					
+			if($.==1)
+			{
+				print OUT "$_\n";
+			}
+			else
+			{
+				if(exists($SIEVE{$fields[0]}))
+				{
+					$rowElements{$fields[0]} = $fpos;
+				}
+			}
+			
+			$fpos += length($_) + 1;
+		}
+		
+		$fileElementNo = $. - 1;
+		
+		for my $element (@orderedSieveElements)
+		{
+			if($minus xor exists($rowElements{$element}))
+			{
+				push(@desiredRows, $rowElements{$element});
+			}
+		}
+		
+		$sievedElementNo = scalar(@desiredRows);
+		
+		for my $rowPos (@desiredRows)
+		{
+			seek(IN, $rowPos, 0);
+			$_ = <IN>;
+			
+			print OUT "$_";
+		}
+	}
+	else
+	{
+		while (<IN>)
+		{
+			s/\r?\n?$//;
+			my @fields = split('\t', $_, 2);
+			
+			if($.==1)
+			{
+				print OUT "$_\n";
+			}
+			else
+			{
+				if($minus xor exists($SIEVE{$fields[0]}))
+				{
+					print OUT "$_\n";
+					$sievedElementNo++;
+				}	
+			}
+		}
+		
+		$fileElementNo = $. - 1;
+	}
+}
+
+close(IN);
+close(OUT);
+
+print STDERR <<SUMMARY;
+Sieve File Element No : $sieveFileElementNo
+File Element No       : $fileElementNo
+Sieved Element No     : $sievedElementNo
+Sieved File Name      : $outFile
+SUMMARY
+
+sub getHeader
+{
+	my $file = shift;
+	
+	open(MY_IN, $file) || return 0;
+	$_ = <MY_IN>;
+	close(MY_IN);
+	s/\r?\n?$//;
+	my @fields = split('\t', $_, 2);
+	
+	return $fields[0];
+}

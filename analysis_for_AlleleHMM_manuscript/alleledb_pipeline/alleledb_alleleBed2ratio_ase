@@ -1,0 +1,231 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+use File::Basename;
+use Getopt::Long;
+use Pod::Usage;
+
+=head1 NAME
+
+alleleBed2ratio_ase
+
+=head1 SYNOPSIS
+
+ alleleBed2ratio_ase [options] 
+
+  -h help
+  
+  this takes in 2 BED files (counts info for 2 individuals), intersect them and calculates the ratio of counts of reference allele/total at that position
+  note that the script currently works on a combined dataset, i.e. where you dont have multiple datasets pooled together 
+  - pooled runs allow for phasing for that position to be known. (you can have multiple runs detecting the same SNP in different direction due to different read depth in each dataset)
+  input:
+  ##chr			start						end							ref,mat,pat,A,C,G,T,total,pvalue,source
+  1       22352039        22352040        G,None,None,0,0,16,44,60,0.000394043242726,PolyA_pool_interestingHets.bed
+   
+  output (BED format):
+  ##chr		start						end						fileA(indivA)ref/total			fileB(indivB)ref/total
+  1       22352039        22352040      0.5													0.5
+  
+  RECOMMEND OUTPUT FILE NAME ACCORDING TO the TWO SAMPLES COMPARED
+  
+  NOTE:
+  1) total cannot be 0; script will kill
+  2) catch different reference allele
+  3) pseudo zero for correlation calculation
+  4) ## substitutions
+		s/\r?\n?$//;
+
+  Example:
+      alleleBed2ratio_ase -a fileA.bed -b fileB.bed > allHets.12878.12891.ase.bed
+  
+=head1 DESCRIPTION
+
+=cut
+
+#option variables
+my $help;
+my $indivA = '';
+my $indivB = '';
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('h'=>\$help, 'a=s'=>\$indivA, 'b=s'=>\$indivB))
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+## read files and returns a hash of ratios $snps2ratioREF->{$snp}->{$ref}->{$tf}->{$indiv}
+## based on snps
+my %snps2ratio;
+my %mysnps;
+my $snps2ratio_ref = \%snps2ratio;
+my $mysnps_ref     = \%mysnps;
+($snps2ratio_ref, $mysnps_ref) = readFile($indivA,$snps2ratio_ref,$mysnps_ref,'A');
+($snps2ratio_ref, $mysnps_ref) = readFile($indivB,$snps2ratio_ref,$mysnps_ref,'B');
+
+## loop the snps in indiv A and indiv B
+for my $chr ( sort {$a <=> $b} keys %$mysnps_ref )
+{
+	for my $start ( sort {$a <=> $b} keys % {$mysnps_ref->{$chr} })	
+	{
+		my $end  = $mysnps{$chr}{$start};
+		my $ssnp = "$chr-$start-$end";
+		
+		for my $ref ( sort keys  %{ $snps2ratio_ref->{$ssnp}})
+		{
+			my $numIndiv = scalar keys %{$snps2ratio_ref->{$ssnp}{$ref}};
+			
+			#print "$ssnp->$ref->$numIndiv\n"; ##debug
+			
+			if($numIndiv == 2)
+			{
+				my $achr;
+	  			
+	  				if($chr == 23)
+	  				{
+	  					$achr = "X";
+	  				}
+	  				else
+	  				{
+	  					$achr = $chr; 
+	  				}
+	 
+	  				print "chr$achr\t$start\t$end\t$ref\t";
+	  				print "$snps2ratio_ref->{$ssnp}{$ref}{'A'}\t";
+	  				print "$snps2ratio_ref->{$ssnp}{$ref}{'B'}\n";
+
+	  	}
+		}
+	}
+}
+
+## print log file
+#my $ofile = "allele2Bed2ratio_asb.log";
+#open (OUTPUT, >$ofile) || die "Cannot open $ofile: $!";
+#print OUTPUT "alleleBed2ratio\n-a $indivA\n-b $indivB\n";
+#close(OUTPUT);
+
+
+
+###############################################################################
+# read and parse file; returns a hash of ratios
+# $snps2ratio{$snp}{$tf}{'A'}
+
+sub readFile
+{
+	my $file = shift;
+	my $snps2ratioREF = shift; ## you are assigning the hash REFERENCE!
+	my $mysnpsREF = shift;
+	my $indiv = shift;
+	open (INPUT, $file) || die "Cannot open $file: $!";
+	
+	
+	## variables
+	my %c;
+		
+	## read fileA
+	while (<INPUT>)
+	{
+		## substitutions
+		s/\r?\n?$//;		
+		
+		#print "$file\t$_\n"; ## debug
+		
+		## split tabs
+		my @fields = split("\t",$_);
+		my $chr 	= $fields[0];
+		$chr =~ s/chr//;
+		my $start = $fields[1];
+		my $end		= $fields[2];
+		
+		## change chr X to chr 23
+		if ($chr eq 'X')
+		{
+			$chr = 23;
+		}
+		
+		my $snp   = $chr."-".$start."-".$end;
+		
+		## split the info col
+		my @info   = split(";",$fields[3]);
+		
+		for (my $i=0; $i<@info; $i++)
+		{
+			my @stuff 	= split(",",$info[$i]);
+			my $ref     = $stuff[0];
+			my $mat   	= $stuff[1];
+			my $pat   	= $stuff[2];
+			$c{'A'}			= $stuff[3];
+			$c{'C'}			= $stuff[4];
+			$c{'G'}			= $stuff[5];
+			$c{'T'}			= $stuff[6];
+			$c{'total'} = $stuff[7];
+			my $pval  	= $stuff[8];
+			
+			catchExceptions($snp, $file, $snps2ratioREF, $ref, $c{'total'});
+  		
+			$snps2ratioREF->{$snp}->{$ref}->{$indiv} = calcRatio($c{$ref},$c{'total'});
+			$mysnpsREF->{$chr}->{$start} = $end;
+		  #print "$file\t$snp\t$ref\t$c{$ref}\t|$stuff[7]|\t$snps2ratioREF->{$snp}->{$ref}->{$indiv}\n"; #debug
+		  #print "$chr->$start->$mysnpsREF->{$chr}->{$start}\t$indiv\n" ## debug
+		}			
+	}
+	close(INPUT);
+	
+	return ($snps2ratioREF, $mysnpsREF);
+}
+
+###############################################################################
+# catch exceptions
+
+sub catchExceptions
+{
+	my ($snp, $file, $snps2ratioREF, $ref, $ctotal) = @_;
+	
+	## catch zero totals
+	if($ctotal == 0)
+	{
+		die "total counts at $snp in $file = 0 : $!";
+	}
+	
+	## catch different reference allele
+	if(exists($snps2ratioREF->{$snp}))
+	{
+		for my $rref (keys %{ $snps2ratioREF->{$snp} })
+		{
+			if($rref ne $ref)
+			{
+				die "$rref|ref allele different for $snp ($ref) in $file"
+			}
+		}
+	}
+}
+
+
+
+###############################################################################
+# calc the reference allele count / total count (cA+cC+cG+cT)
+
+sub calcRatio
+{
+	my $cRef = shift;
+	my $cTot = shift;
+	
+	if($cRef/$cTot == 0)
+	{
+		return 0.00001;
+	}
+	else
+	{
+		return $cRef/$cTot;
+	}
+}
