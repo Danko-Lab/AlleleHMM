@@ -31,7 +31,7 @@ done
 ### Perform Binomial test in the AlleleHMM blocks
 for i in sub2 sub4 sub8 sub16 total
   do 
-  bash BinoTest_SeqDepth.bsh SRR1552485_${i} > BinoTest_SRR1552485_${i}.log
+  bash BinoTest_multiTao.bsh SRR1552485_${i} > BinoTest_SRR1552485_${i}.log
 done
 
 

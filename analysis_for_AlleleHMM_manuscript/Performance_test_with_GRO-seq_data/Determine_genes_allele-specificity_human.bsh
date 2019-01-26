@@ -1,0 +1,61 @@
+# human hg19_GRCh37
+gzip -d gencode.v28lift37.annotation.gtf.gz
+gtf2bed < gencode.v28lift37.annotation.gtf > gencode.v28lift37.annotation.bed
+gzip gencode.v28lift37.annotation.gtf &
+cat gencode.v28lift37.annotation.bed |grep chr| cut -f 1-8 |awk 'BEGIN {OFS="\t"} ($8=="gene"){print $0}' |LC_ALL=C sort --temporary-directory=/workdir/sc2457/tmp/ --parallel=10 -V  > gencode.v28lift37.annotation_gene.bed
+bedtools merge -i gencode.v28lift37.annotation_gene.bed -s -o collapse,distinct,distinct  -c 4,5,6 |awk 'BEGIN {OFS="\t"; a="111"} {print $1,$2,$3,$4,a,$6}' |LC_ALL=C sort --temporary-directory=/workdir/sc2457/tmp/ --parallel=10 -V > gencode.v28lift37.annotation_geneMerged.bed
+
+###### indentify genes allele-specificity
+### counts the maternal, paternal reads, and the reads that cannot tell where it from, in the regions the bed file
+# perform BinomialTest and filter by FDR<= FDR_CUTOFF
+# the allele-specificity of genes
+ln -s /workdir/sc2457/GM_GroSeq_AlleleDB_20170606/test_in_total/SRR1552485_total.*.map2ref.sorted.bed.gz .
+ln -s /workdir/sc2457/GM_GroSeq_AlleleDB_20170606/test_in_total/AlleleHMM_result/gencode.v28lift37.annotation_geneMerged.bed .
+
+
+#GM
+PL=/workdir/sc2457/alleleDB/alleledb_pipeline
+MAPS=/workdir/sc2457/alleleseq.gersteinlab.org/NA12878_diploid/NA12878_diploid_2015_feb5_3versions/1kgp3-svs-pass_NA12878_hg19_150109_w_transcriptome/%s_NA12878.map
+PREFIX=SRR1552485_total
+MATBOWTIE=${PREFIX}.mat.bowtie
+PATBOWTIE=${PREFIX}.pat.bowtie
+FDR_SIMS=10
+FDR_CUTOFF=0.1
+bed_f=gencode.v28lift37.annotation_geneMerged.bed
+j=gencode.v28lift37.annotation_geneMerged
+
+bedtools coverage -a ${bed_f} -b <(zcat ${MATBOWTIE}_AMBremoved_sorted_specific.map2ref.sorted.bed.gz) -s | awk 'BEGIN {OFS="\t"; t="_"} {print $1t$2t$3t$6, $0}' |LC_ALL=C sort -k1,1 --parallel=30 > ${j}.mat_cov.bed &
+bedtools coverage -a ${bed_f} -b <(zcat ${PATBOWTIE}_AMBremoved_sorted_specific.map2ref.sorted.bed.gz) -s | awk 'BEGIN {OFS="\t"; t="_"} {print $1t$2t$3t$6, $0}' |LC_ALL=C sort -k1,1 --parallel=30 > ${j}.pat_cov.bed &
+wait
+join -t $'\t' -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.8,2.8 ${j}.mat_cov.bed ${j}.pat_cov.bed > ${j}.temp_cov.bed &
+bedtools coverage -a ${bed_f} -b <(zcat ${PATBOWTIE}_AMBremoved_sorted_identical.map2ref.sorted.bed.gz) -s | awk 'BEGIN {OFS="\t"; t="_"} {print $1t$2t$3t$6, $0}' |LC_ALL=C sort -k1,1 --parallel=30 > ${j}.iden_cov.bed &
+wait
+join -t $'\t' -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,2.8 ${j}.temp_cov.bed ${j}.iden_cov.bed | LC_ALL=C sort -k1,2V -k2,3n --parallel=30 > ${j}.merged_cov.bed
+mv ${j}.temp_cov.bed ${j}.mat_cov.bed ${j}.pat_cov.bed ${j}.iden_cov.bed toremove
+mv ${j}.merged_cov.bed ${j}.merged_cov.bed_temp
+# keep genes with at lease 1 allele-specific read
+cat ${j}.merged_cov.bed_temp | awk 'BEGIN{OFS="\t"} ($6+$7 >0) {print $0}' | awk 'BEGIN{OFS="\t"} {split($1,a,"_"); print $2, $3, $4, a[4], $6, $7, $8, $5}' > ${j}.merged_cov.bed
+
+python ${PL}/BinomialTestFor_merged_cov.bed.py ${j}.merged_cov.bed ${j}.merged_cov_binomtest.bed
+# mv ${j}.merged_cov.bed ${j}.merged_cov.bed_temp toremove
+# output of BinomialTestFor_merged_cov.bed.py:(hmm+BinomialTest) if p-value <= 0.05, remain what it got from hmm (can ne M,P, or S), otherwise S.
+python ${PL}/FalsePosFor_merged_cov.bed.py ${j}.merged_cov_binomtest.bed ${FDR_SIMS} ${FDR_CUTOFF} > ${j}.merged_cov_binomtest_FDR.txt
+
+## calulate multiple FDR
+python ${PL}/FalsePosFor_merged_cov.bed.py ${j}.merged_cov_binomtest.bed ${FDR_SIMS} 0.1 > ${j}.merged_cov_binomtest_FDR_0.1.txt &
+python ${PL}/FalsePosFor_merged_cov.bed.py ${j}.merged_cov_binomtest.bed ${FDR_SIMS} 0.05 > ${j}.merged_cov_binomtest_FDR_0.05.txt &
+python ${PL}/FalsePosFor_merged_cov.bed.py ${j}.merged_cov_binomtest.bed ${FDR_SIMS} 0.01 > ${j}.merged_cov_binomtest_FDR_0.01.txt &
+
+
+## determine sym and biased use different FDR value
+awk 'NR==1 { print $0 } NR>1 && $9 <= thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}.merged_cov_binomtest_FDR.txt) < ${j}.merged_cov_binomtest.bed | awk 'BEGIN {OFS="\t"} ($6>$7) {print $1, $2, $3, "M", $9, $4, $6, $7, $8}; ($6<$7){print $1, $2, $3, "P", $9, $4, $6, $7, $8}' > ${j}_interestingHets.bed
+awk 'NR==1 { print $0 } NR>1 && $9 <= thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}.merged_cov_binomtest_FDR_0.01.txt) < ${j}.merged_cov_binomtest.bed | awk 'BEGIN {OFS="\t"} ($6>$7) {print $1, $2, $3, "M", $9, $4, $6, $7, $8}; ($6<$7){print $1, $2, $3, "P", $9, $4, $6, $7, $8}' > ${j}_AlleleBiased.bed
+# anything > FDR0.1, S
+awk 'NR==1 { print $0 } NR>1 && $9 > thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}.merged_cov_binomtest_FDR_0.1.txt) < ${j}.merged_cov_binomtest.bed | awk 'BEGIN {OFS="\t"} {print $1, $2, $3, "S", $9, $4, $6, $7, $8}' > ${j}_AlleleSym.bed
+
+head -n 1 ${j}_AlleleBiased.bed > ${j}_withAllele-specificity_FDR.bed
+cat ${j}_AlleleBiased.bed | awk 'NR>1 {print $0}' > tmp.bed
+cat ${j}_AlleleSym.bed | awk 'NR>1 {print $0}' >> tmp.bed
+cat tmp.bed | LC_ALL=C sort -k1,1V -k2,2n --parallel=30 >> ${j}_withAllele-specificity_FDR.bed
+rm tmp.bed
+
