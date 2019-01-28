@@ -109,11 +109,11 @@ if [[ ${FLAG} -eq 1 || ${FLAG} -eq 0 ]] ; then
 	date >> 1-alignment-${NAME}.log
 	
 	## align mat and pat
-	##_zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -v 2 -m 1 -f ${PGENOME_PATH}/AltRefMother/AltRefMother - > ${FASTQ}.mat.bowtie 2> ${FASTQ}.mat.log & 
-	##_zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -v 2 -m 1 -f ${PGENOME_PATH}/AltRefFather/AltRefFather - > ${FASTQ}.pat.bowtie 2> ${FASTQ}.pat.log &
+	zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -p 25 -v 2 -m 1 -f ${PGENOME_PATH}/AltRefMother/AltRefMother - > ${FASTQ}.mat.bowtie 2> ${FASTQ}.mat.log & 
+	zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -p 25 -v 2 -m 1 -f ${PGENOME_PATH}/AltRefFather/AltRefFather - > ${FASTQ}.pat.bowtie 2> ${FASTQ}.pat.log &
 	
-	zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -v 2 -m 1 -f ${PGENOME_PATH}/${NAME}_maternal - > ${FASTQ}.mat.bowtie 2> ${FASTQ}.mat.log & 
-	zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -v 2 -m 1 -f ${PGENOME_PATH}/${NAME}_paternal - > ${FASTQ}.pat.bowtie 2> ${FASTQ}.pat.log &
+	#zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -v 2 -m 1 -f ${PGENOME_PATH}/${NAME}_maternal - > ${FASTQ}.mat.bowtie 2> ${FASTQ}.mat.log & 
+	#zcat ${FASTQ_PATH}/*.fastq.gz | gzip -c | ${PL}/alleledb_filter_input.sh ${PL} - | bowtie --best --strata -v 2 -m 1 -f ${PGENOME_PATH}/${NAME}_paternal - > ${FASTQ}.pat.bowtie 2> ${FASTQ}.pat.log &
 	wait
 
 	## postprocess
@@ -178,8 +178,11 @@ if [[ ${FLAG} -eq 2 || ${FLAG} -eq 0 ]] ; then
 	#${FASTQ}.[mp]at.bowtie.1[0-9]_[mp]aternal.bed \
 	#${FASTQ}.[mp]at.bowtie.2[0-2]_[mp]aternal.bed \
 	#${FASTQ}.[mp]at.bowtie.[XY]_[mp]aternal.bed > ${FASTQ}.[mp]at.bowtie.${MATPATERNAL}.bed
-	rm ${FASTQ}.mat.bowtie.*_maternal.bed ${FASTQ}.mat.bowtie.*_maternal.bowtie
-	rm ${FASTQ}.pat.bowtie.*_paternal.bed ${FASTQ}.pat.bowtie.*_paternal.bowtie
+	
+	mkdir toremove
+    mv ${FASTQ}.mat.bowtie.*_maternal.bed ${FASTQ}.mat.bowtie.*_maternal.bowtie toremove/.
+	mv ${FASTQ}.pat.bowtie.*_paternal.bed ${FASTQ}.pat.bowtie.*_paternal.bowtie toremove/.
+	gzip -r toremove/* &
 	
 	date >> 2-map.back.ref-${NAME}.log
 	
@@ -220,7 +223,7 @@ if [[ ${FLAG} -eq 3 || ${FLAG} -eq 0 ]] ; then
 	## note that my chain files do not have prefix "chr"; could do away if present
 	##_intersectBed -a <(awk '{OFS="\t"}{FS="\t"}{print "chr"$0}' ${FASTQ}.mat.bowtie.maternal.map2ref.bed) -b snp.calls.bed -wa -wb > intersect.${FASTQ}.mat.snp.calls.txt &
 	##_intersectBed -a <(awk '{OFS="\t"}{FS="\t"}{print "chr"$0}' ${FASTQ}.pat.bowtie.paternal.map2ref.bed) -b snp.calls.bed -wa -wb > intersect.${FASTQ}.pat.snp.calls.txt &
-	intersectBed -a <(awk '{OFS="\t"}{FS="\t"}{print "chr"$0}' ${FASTQ}.mat.bowtie.maternal.map2ref.bed) -b snp.calls.bed -wa -wb > intersect.${FASTQ}.mat.snp.calls.txt &
+        intersectBed -a <(awk '{OFS="\t"}{FS="\t"}{print "chr"$0}' ${FASTQ}.mat.bowtie.maternal.map2ref.bed) -b snp.calls.bed -wa -wb > intersect.${FASTQ}.mat.snp.calls.txt &
 	intersectBed -a <(awk '{OFS="\t"}{FS="\t"}{print "chr"$0}' ${FASTQ}.pat.bowtie.paternal.map2ref.bed) -b snp.calls.bed -wa -wb > intersect.${FASTQ}.pat.snp.calls.txt &
 	wait
 	
@@ -312,17 +315,17 @@ if [[ ${FLAG} -eq 5 || ${FLAG} -eq 0 ]] ; then
 
 	## align flipped reads
 	# mat flip to mat and pat genomes
-	##_zcat intersect.${FASTQ}.mat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.matflip2pat.flipread.unaligned --max intersect.${FASTQ}.matflip2pat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/AltRefFather/AltRefFather - > intersect.${FASTQ}.matflip2pat.flipread.bowtie 2> intersect.${FASTQ}.matflip2pat.flipread.log &  
+	zcat intersect.${FASTQ}.mat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.matflip2pat.flipread.unaligned --max intersect.${FASTQ}.matflip2pat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/AltRefFather/AltRefFather - > intersect.${FASTQ}.matflip2pat.flipread.bowtie 2> intersect.${FASTQ}.matflip2pat.flipread.log &  
 
 	# pat flip to mat and pat genomes
-	##_zcat intersect.${FASTQ}.pat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.patflip2mat.flipread.unaligned --max intersect.${FASTQ}.patflip2mat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/AltRefMother/AltRefMother - > intersect.${FASTQ}.patflip2mat.flipread.bowtie 2> intersect.${FASTQ}.patflip2mat.flipread.log &
+	zcat intersect.${FASTQ}.pat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.patflip2mat.flipread.unaligned --max intersect.${FASTQ}.patflip2mat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/AltRefMother/AltRefMother - > intersect.${FASTQ}.patflip2mat.flipread.bowtie 2> intersect.${FASTQ}.patflip2mat.flipread.log &
 
 
 	# mat flip to mat and pat genomes
-	zcat intersect.${FASTQ}.mat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.matflip2pat.flipread.unaligned --max intersect.${FASTQ}.matflip2pat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/${NAME}_paternal - > intersect.${FASTQ}.matflip2pat.flipread.bowtie 2> intersect.${FASTQ}.matflip2pat.flipread.log &  
+	#zcat intersect.${FASTQ}.mat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.matflip2pat.flipread.unaligned --max intersect.${FASTQ}.matflip2pat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/${NAME}_paternal - > intersect.${FASTQ}.matflip2pat.flipread.bowtie 2> intersect.${FASTQ}.matflip2pat.flipread.log &  
 
 	# pat flip to mat and pat genomes
-	zcat intersect.${FASTQ}.pat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.patflip2mat.flipread.unaligned --max intersect.${FASTQ}.patflip2mat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/${NAME}_maternal - > intersect.${FASTQ}.patflip2mat.flipread.bowtie 2> intersect.${FASTQ}.patflip2mat.flipread.log &
+	#zcat intersect.${FASTQ}.pat.flipread.fastq.gz | bowtie --un intersect.${FASTQ}.patflip2mat.flipread.unaligned --max intersect.${FASTQ}.patflip2mat.flipread.multi --best --strata -v 2 -m 1 -q ${PGENOME_PATH}/${NAME}_maternal - > intersect.${FASTQ}.patflip2mat.flipread.bowtie 2> intersect.${FASTQ}.patflip2mat.flipread.log &
 
 
 	wait
@@ -442,7 +445,7 @@ if [[ ${FLAG} -eq 7 || ${FLAG} -eq 0 ]] ; then
 fi
 
 ## get out of allelicbias folder
-cd ..
+#cd ..
 
 
 
@@ -452,7 +455,8 @@ cd ..
 ## 8 fsieve original multi reads from original fastq
 ## then run alleleseq again on this filtered fastqs
 #############################################################
-if [[ ${FLAG} -eq 8 || ${FLAG} -eq 0 ]] ; then
+#if [[ ${FLAG} -eq 8 || ${FLAG} -eq 0 ]] ; then
+if [[ ${FLAG} -eq 8 ]] ; then
 	echo "################################################" > 8-final-run.log
 	echo "## 8 rerun alleleseq on bias filtered reads ####" >> 8-final-run.log
 	echo "################################################" >> 8-final-run.log
@@ -487,8 +491,8 @@ if [[ ${FLAG} -eq 8 || ${FLAG} -eq 0 ]] ; then
 	echo "### ALLELESEQ-BINOMIAL-RUN ###" >> 8-final-run.log
 	echo "##############################" >> 8-final-run.log
 	date >> 8-final-run.log
-	##_make -f ${PGENOME_PATH}/${PIPELINEFILE} PREFIX=${FASTQ} >> 8-final-run.log
-        make -f ${PIPELINEFILE} BASE=${PGENOME_PATH} PL=${PL} SNPS=${PGENOME_PATH}/snp.calls CNVS=${PGENOME_PATH}/cnv_rd_${NAME}/rd.${NAME}.txt MAPS=${PGENOME_PATH}/%s_${NAME}.map FDR_CUTOFF=${FDR_THRESH} PREFIX=${FASTQ} >> 8-final-run.log
+	make -f ${PIPELINEFILE} PREFIX=${FASTQ} >> 8-final-run.log
+        #make -f ${PIPELINEFILE} BASE=${PGENOME_PATH} PL=${PL} SNPS=${PGENOME_PATH}/snp.calls CNVS=${PGENOME_PATH}/cnv_rd_${NAME}/rd.${NAME}.txt MAPS=${PGENOME_PATH}/%s_${NAME}.map FDR_CUTOFF=${FDR_THRESH} PREFIX=${FASTQ} >> 8-final-run.log
 	
 	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts
 	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets 
@@ -504,5 +508,151 @@ if [[ ${FLAG} -eq 8 || ${FLAG} -eq 0 ]] ; then
 	
 	date >> 8-final-run.log
 fi
+
+
+#############################################################
+## 9 fsieve original multi reads from original fastq
+## seperate the bowtie to plus and minus strand
+## then run alleleseq again on this filtered fastqs
+#############################################################
+if [[ ${FLAG} -eq 9 || ${FLAG} -eq 0 ]] ; then
+	echo "###################################################################" > 9-Strand-Specific-final-run.log
+	echo "## 9 rerun alleleseq on bias filtered reads (Strand-Specific) ####" >> 9-Strand-Specific-final-run.log
+	echo "##################################################################" >> 9-Strand-Specific-final-run.log
+	
+	date >> 9-Strand-Specific-final-run.log
+
+	## 1) cut for BED and then sort and uniq to obtain ids
+	## 2a) removes reads from original aligned bowtie files in folder 1
+	## 2b) Run AlleleSeq-betabinomial on filtered bowtie with strand specificity
+	
+	#ln -s ./allelicbias-${PGENOME}-${NAME}/1-alignment-${NAME}/${FASTQ}.mat.bowtie
+	#ln -s ./allelicbias-${PGENOME}-${NAME}/1-alignment-${NAME}/${FASTQ}.pat.bowtie
+	mv ./1-alignment-${NAME}/${FASTQ}.mat.bowtie .
+	mv ./1-alignment-${NAME}/${FASTQ}.pat.bowtie .
+
+	## 1) create ID list of all reads that multimap	
+	echo "Note that all redundancies in read IDs that are to be removed are made unique here"
+	cat <(cat ./7-multi-${NAME}/originalpatreads.intersect.${FASTQ}.patflip2mat.flipread.multi.bed ./7-multi-${NAME}/originalmatreads.intersect.${FASTQ}.matflip2pat.flipread.multi.bed | sed 's/\#\*o\*\#/\t/g' | cut -f4) \
+	./4-flip-${NAME}/intersect.${FASTQ}.mat.snp.calls.removedreads.ids \
+	./4-flip-${NAME}/intersect.${FASTQ}.mat.snp.calls.taggedreads.ids \
+	./4-flip-${NAME}/intersect.${FASTQ}.mat.snp.calls.tooManySNVsReads.ids \
+	./4-flip-${NAME}/intersect.${FASTQ}.pat.snp.calls.removedreads.ids \
+	./4-flip-${NAME}/intersect.${FASTQ}.pat.snp.calls.taggedreads.ids \
+	./4-flip-${NAME}/intersect.${FASTQ}.pat.snp.calls.tooManySNVsReads.ids \
+	<(cut -f1 ./5-alignment2-${NAME}/matpat.remove.reads.location.not.matched.txt) \
+	 | sort | uniq > originalmatpatreads.toremove.ids
+##_	./allelicbias-${PGENOME}-${NAME}/4-flip-${NAME}/intersect.${FASTQ}.mat.snp.calls.toomanySNVsReads.ids \
+##_	./allelicbias-${PGENOME}-${NAME}/4-flip-${NAME}/intersect.${FASTQ}.pat.snp.calls.toomanySNVsReads.ids \
+
+
+
+	## 2) run alleleseq with betabinomial calculations
+	echo "###############################################" >> 9-Strand-Specific-final-run.log
+	echo "### ALLELESEQ-BINOMIAL-RUN (Strand-Specific)###" >> 9-Strand-Specific-final-run.log
+	echo "###############################################" >> 9-Strand-Specific-final-run.log
+	date >> 9-Strand-Specific-final-run.log
+	make -f ${PIPELINEFILE} PREFIX=${FASTQ} >> 9-Strand-Specific-final-run.log
+        #make -f ${PIPELINEFILE} BASE=${PGENOME_PATH} PL=${PL} SNPS=${PGENOME_PATH}/snp.calls CNVS=${PGENOME_PATH}/cnv_rd_${NAME}/rd.${NAME}.txt MAPS=${PGENOME_PATH}/%s_${NAME}.map FDR_CUTOFF=${FDR_THRESH} PREFIX=${FASTQ} >> 9-Strand-Specific-final-run.log
+	
+	#seperate into plus amd minus folder
+	mkdir plus
+	cp counts_plus.txt plus/counts.txt
+	cp interestingHets_plus.txt plus/interestingHets.txt
+	mkdir minus
+	cp counts_minus.txt minus/counts.txt
+	cp interestingHets_minus.txt minus/interestingHets.txt
+
+    cd plus
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets 
+	
+	# betabinomial
+	#echo "folder=\"$(pwd)/\"; setwd(folder)" | cat - ${PL}/alleledb_calcOverdispersion.R > calcOverdispersion.R 
+	#R CMD BATCH ./calcOverdispersion.R  
+	R --vanilla --slave --args $(pwd) < ${PL}/alleledb_calcOverdispersion_1.R > ./calcOverdispersion.Rout  
+	#echo "folder=\"$(pwd)/\"; setwd(folder)" | cat - ${PL}/alleledb_alleleseqBetabinomial.R > alleleseqBetabinomial.R 
+	#R CMD BATCH "--args FDR.thresh=$FDR_THRESH" ./alleleseqBetabinomial.R  
+	R --vanilla --slave --args $(pwd) $FDR_THRESH < ${PL}/alleledb_alleleseqBetabinomial_1.R > alleleseqBetabinomial.Rout
+
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets.betabinom
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts.betabinom
+	
+	cd ../minus
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets 
+	
+	# betabinomial
+	R --vanilla --slave --args $(pwd) < ${PL}/alleledb_calcOverdispersion_1.R > ./calcOverdispersion.Rout  
+	R --vanilla --slave --args $(pwd) $FDR_THRESH < ${PL}/alleledb_alleleseqBetabinomial_1.R > alleleseqBetabinomial.Rout
+
+	
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets.betabinom
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts.betabinom
+
+
+    cd ..
+	date >> 9-Strand-Specific-final-run.log
+	mkdir toremove
+	mv [1234567]* *.bowtie toremove/.
+	gzip -r toremove/* &
+fi
+
+
+
+if [[ ${FLAG} -eq 10 ]] ; then
+	
+	date >> 9-Strand-Specific-final-run.log
+
+	## 2) run alleleseq with betabinomial calculations
+	echo "###############################################" >> 9-Strand-Specific-final-run.log
+	echo "### ALLELESEQ-BINOMIAL-RUN (Strand-Specific)###" >> 9-Strand-Specific-final-run.log
+	echo "###############################################" >> 9-Strand-Specific-final-run.log
+	date >> 9-Strand-Specific-final-run.log
+	make -f ${PIPELINEFILE} PREFIX=${FASTQ} >> 9-Strand-Specific-final-run.log
+        #make -f ${PIPELINEFILE} BASE=${PGENOME_PATH} PL=${PL} SNPS=${PGENOME_PATH}/snp.calls CNVS=${PGENOME_PATH}/cnv_rd_${NAME}/rd.${NAME}.txt MAPS=${PGENOME_PATH}/%s_${NAME}.map FDR_CUTOFF=${FDR_THRESH} PREFIX=${FASTQ} >> 9-Strand-Specific-final-run.log
+	
+	#seperate into plus amd minus folder
+	mkdir plus
+	cp counts_plus.txt plus/counts.txt
+	cp interestingHets_plus.txt plus/interestingHets.txt
+	mkdir minus
+	cp counts_minus.txt minus/counts.txt
+	cp interestingHets_minus.txt minus/interestingHets.txt
+
+    cd plus
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets 
+	
+	# betabinomial
+	#echo "folder=\"$(pwd)/\"; setwd(folder)" | cat - ${PL}/alleledb_calcOverdispersion.R > calcOverdispersion.R 
+	#R CMD BATCH ./calcOverdispersion.R  
+	R --vanilla --slave --args $(pwd) < ${PL}/alleledb_calcOverdispersion_1.R > ./calcOverdispersion.Rout  
+	#echo "folder=\"$(pwd)/\"; setwd(folder)" | cat - ${PL}/alleledb_alleleseqBetabinomial.R > alleleseqBetabinomial.R 
+	#R CMD BATCH "--args FDR.thresh=$FDR_THRESH" ./alleleseqBetabinomial.R  
+	R --vanilla --slave --args $(pwd) $FDR_THRESH < ${PL}/alleledb_alleleseqBetabinomial_1.R > alleleseqBetabinomial.Rout
+
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets.betabinom
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts.betabinom
+	
+	cd ../minus
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts
+	${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets 
+	
+	# betabinomial
+	R --vanilla --slave --args $(pwd) < ${PL}/alleledb_calcOverdispersion_1.R > ./calcOverdispersion.Rout  
+	R --vanilla --slave --args $(pwd) $FDR_THRESH < ${PL}/alleledb_alleleseqBetabinomial_1.R > alleleseqBetabinomial.Rout
+
+	
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} interestingHets.betabinom
+	#${PL}/alleledb_alleleseqOutput2betabinomFormat.sh ${NAME} ${AS} ${PL} counts.betabinom
+
+
+
+	date >> 9-Strand-Specific-final-run.log
+fi
+
+
+
 
 
