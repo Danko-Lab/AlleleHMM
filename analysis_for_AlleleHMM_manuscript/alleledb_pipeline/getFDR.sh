@@ -1,0 +1,1 @@
+tail -1 $1 | awk '{print $6}'

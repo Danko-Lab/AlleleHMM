@@ -1,0 +1,137 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+##_use fralib;
+use Getopt::Long;
+use File::Basename;
+use Pod::Usage;
+
+=head1 NAME
+
+chainSwap
+
+=head1 SYNOPSIS
+
+ calcAllelicBias [options] <intersectBed alleleseq output -wa -wb file>
+
+  -h  help
+  -m  modes, default 2
+  		mode 1
+  		--uses input file in the following intersectBed format, between an AlleleSeq output in BED format (first line)
+  		--read BED file with the last field made up of subfields separated by '#*o*#'
+  		chr1    28840571        28840572        T       K       T       K       PHASED  G       T       0       0       38      3       M       Asym    1.04791979538e-08       -10.925942 0.000549572633335996    
+  		chr1    28840543        28840579        5:79:696:147#*o*#GGTGGTGCTCGCCTGTAGTCTCAGCTACGTGGGGGG#*o*#chr1#*o*#28840571#*o*#28840572#*o*#GT
+  
+  		mode 2
+  		--takes in an AlleleSeq output and a pile of Bowtie reads
+  
+  		mode 3
+  		--takes in AlleleSeq output-style BED format
+  
+  OUTPUT:
+  col1:chr
+  col2:snv start (0based)
+  col3:snv end (1based)
+  col4:ref allele
+  col5:mat_gtyp
+  col6:pat_gtyp
+  col7:c_gtyp
+  col8:phase
+  col9:mat_allele
+  col10:pat_allele
+  col11:allelic bias = (num of reads with bias at this SNV) / (total num of reads)
+  
+  example: intersectBed -a interestingHets.betabinom.min6.newpeaks.cnved.bed -b originalmatreads.intersect.xx.fastq.gz.matflip2pat.flipread.multi.bed -wa -wb 
+  				| sortByChr.sh - | uniq | calcAllelicBias -m 1 - | sortByChr.sh - | uniq > output.txt
+        
+=head1 DESCRIPTION
+
+=cut
+
+my $help;
+my $mode = 1;
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('h'=>\$help, 'm=i'=>\$mode) || scalar(@ARGV)!=1)
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+# read FASTA filename
+my $ifile = $ARGV[0];
+open(IN, $ifile) || die "$ifile cannot be opened: $!";
+
+
+## variables
+my %SNPS;
+my %snp2order2line;
+my %snp2totalcounts;
+my %snp2numReads;
+
+## loop chain file
+ITER:while(<IN>)
+{
+	chomp $_;
+	
+	# strip out >
+	s/^>//g; 
+	s/>$//g;
+	if (!length($_)) # skip if empty line
+	{
+		print "\n";
+		next;
+	}
+	
+	my @f = split(/\t/,$_);
+	
+	my $snp = $f[0]."-".$f[1]."-".$f[2];
+	my $totalcounts = $f[10]+$f[11]+$f[12]+$f[13];
+	my $line = ''; 
+	
+	for(my $i=0;$i<10;$i++)
+	{
+		if($i == 0)
+		{
+			$line = $f[$i];
+		}
+		else
+		{
+			$line = $line."\t".$f[$i];
+		}
+	}
+	
+	$snp2totalcounts{$snp} = $totalcounts;
+	
+	if(!exists($snp2numReads{$snp}))
+	{
+		$snp2numReads{$snp} = 1;
+		$snp2order2line{$snp} = $line;
+	}
+	else
+	{
+		$snp2numReads{$snp}++;
+		$snp2order2line{$snp} = $line;
+	}
+}## end of one line 
+
+
+## print
+for my $s (keys %snp2numReads)
+{
+	my $allelicbias = $snp2numReads{$s} / $snp2totalcounts{$s};
+	printf "$snp2order2line{$s}\t$snp2numReads{$s}\t%.3f\n", $allelicbias;
+}
+
+
+close(IN);
+

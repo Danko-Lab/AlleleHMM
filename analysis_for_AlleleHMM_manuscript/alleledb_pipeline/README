@@ -1,0 +1,187 @@
+
+The Allele-specific SNP processing pipeline.  Written by Robert
+Bjornson, Gerstein Lab, Yale University, in collaboration with Joel
+Rozowsky.  Contact robert.bjornson@yale.edu or joel.rozowsky@yale.edu
+with questions or comments.
+
+4/12/2012
+
+There has been a major reworking to the innards of the Pipeline.
+The motivation was to do as much of the processing as possible via
+pipes, so that very little data is written to the disk.
+
+In addition, two columns (Qval and KSval) were removed from the final output 
+(interestingHets.txt), since they were no longer used.
+
+The pipeline currently expects inputs as compressed fastq files, with 
+the suffix .fastq.gz.  If you want it to work on other inputs, you'll
+need to change both PIPELINE.mk and filter_input.sh
+
+Each input file is transformed into a *.cnt file, which is a python pickle
+of the snp counts for that file.  Those file are then combined and a report
+is generated.
+
+Because each mapping task runs two bowties, if you run the makefile in
+parallel, run numprocs/2 tasks.
+ 
+9/20/2010
+
+The basic goal of the pipeline is to take a large collection of reads
+representing ChIP-seq or RNA-seq data from a child in a trio with
+known SNP locations, and detect snps that are significantly skewed to
+one allele.  To do this, we first create references that represent the
+childs' haplotypes (to the best of our ability).  We then map the reads
+to both haplotypes, picking the best match for each read.  This is
+done to eliminate the reference bias that would exist if we mapped to
+the standard reference.  We then count the allele frequency observed
+at each SNP position and look for imbalances, using false discovery
+rate techniques to determine cutoffs.
+
+-----------------------------------------------
+
+The pipeline has six main inputs:
+- one or more collections of unmapped reads.  In our case CHip-seq and
+  RNA-seq from Illumina files.  The pipeline expects fastq format files,
+  with the filename "*.fastq.gz".  All files matching this pattern will be
+  combined into one dataset.  If you have something other than fastq.gz, e.g.
+  bam or fastq, you will need add a preliminary conversion step.  
+
+  As a sanity check, you can use the make target "check" to print out the set of input fastq files.
+
+- a set of SNP locations for a trio.  The make variable SNPS should point to it.
+  The pipeline expects this format:
+chr	pos	ref	Mat	Pat	Child	Phase
+1	114116078	A	TT	TT	TA	MUTANT
+1	114117743	G	CG	GG	GG	HOMO
+1	114120250	C	AC	AA	CA	PHASED
+1	114120756	A	CA	CC	AC	PHASED
+
+Mat and Pat are the maternal and paternal genotypes.
+Child is child's genotype, ordered MatPat if phased.
+
+Phase describes the phasing in the trio.  Possible values are:
+HETERO (all three heterozygous, no phasing possible)
+HOMO (child (subject) is homozygous, not an interesting snp position for our purposes)
+PHASED (child heterozygous and at least one parent homozygous, so phasing was done)
+MUTANT (child genotype is inconsistent with parents' genotype)
+
+- a reference genome, used as a basis for creating the haplotype references for
+the subject.
+
+- a set of known genes, listing transcription start and stop, and exon
+  coordinates, such as UCSC golden path.
+
+- an optional set of ChIP-seq "binding sites", regions in the genome
+where the transcription factor binds.  This will allow filtering of
+SNP locations to just those within binding sites.  If BINDINGSITES is
+set to a non-existent file in the makefile, no filtering will be done.
+
+We used PeakSeek (J. Rozowsky) to determine binding regions.
+The pipeline expects a file with no header in this format (only the first 3 fields will be read):
+chr<tab>start<tab>end ...
+
+The file need not be sorted by chr or start, but the format of chrom names must agree with 
+the other files (usually chr#).
+
+In the makefile, set BINDINGSITES to this file.  You can set it to an empty (but existent)
+file, in which case depth will be set to 1.0 and no filtering will be done.
+
+- a set of normalized read depth values for all snp locations from a
+separate genomic sequencing experiment.  This reports the read depth
+at that snp compared to overall coverage. This is used to filter out
+locations with very low or high coverage, which would tend to indicate
+copy number variation.  The file should be in this format:
+
+chrm    snppos  rd
+1       52066   0.902113
+1       695745  0.909802
+1       742429  0.976435
+
+-----------------------------------------------
+
+The processing follows these steps.
+
+First, in a preliminary step (not part of the pipeline proper) the snp
+calls and the reference genome are combined to generate two new
+reference genomes, corresponding to the inferred maternal and paternal
+haplotypes of the subject.  These two genomes are identical to the
+original reference except in the SNP positions, which are changed to
+be the alleles observed in the subject.  Alleles from SNPS that could
+not be phased are randomly assigned maternal/paternal.  The script
+CreateMirroredGenome.py was used to create these refs.
+
+Pipeline proper: 
+
+For each set of related reads: 
+- The reads are trimmed, if necessary, to remove ends that contain
+large numbers of errors and filtered to remove any reads containing
+N's.
+
+ - The filtered reads are mapped, using bowtie, to the maternal and
+paternal reference genomes.  Bowtie is invoked with these flags:
+--best --strata -v 2 -m 1, which returns only unique hits within a
+minimum number of mismatches, up to two.  This was done to mimic the
+semantics of eland.  By default, for simplicity, the included makefile
+does this step inline.  Some degree of parallelism is possible via the
+-j flag to make, assuming that you are running on a multicore system.
+At Yale, we use a parallel harness developed locally called
+SimpleQueue to do this step in parallel on multiple nodes.  See
+PARALLEL.mk for the parallel pipeline, and
+http://maguro.cs.yale.edu/mediawiki/index.php/SimpleQueue for an
+explanation of the SimpleQueue tool.
+
+ - The two sets of mapped reads are merged into a single set, with
+each read represented at most once, using the better mapping from the
+maternal or paternal reference.  If the two mappings for the same read
+tie in quality, one is chosen at random.
+
+ - Using SNP file and the mapped reads, allele counts are
+generated for each SNP location.  The resulting counts file
+contains the number of As,Cs,Gs, and Ts found in reads mapped over
+each SNP-location.  Various other values are also generated for each
+Het-SNP location, including reference allele, maternal/paternal allele
+(if determinable), major and minor allele, and a binomial pvalue
+assuming a 50/50 probability of sampling each of two alleles.
+
+ - Explicit qvalues are calculated from the observed pvalues.
+
+ - Using a qvalue cutoff, only those Het-SNPs showing significant 
+bias are retained.  This is the filtered counts file for each dataset.
+
+Once, for all counts files: 
+- Using the list of genes and all filtered counts files, information
+about all assymetric Het-SNPs from any of the datasets are grouped
+together by gene.  The locations are annotated as being exonic or
+intronic.  The information about each SNP includes: ref allele;
+maternal and paternal genotype; phasing if determined; A,C,G,T counts;
+biased-towards parent allele; Benjamini-Hochberg corrected pvalue,
+explicitly calculated qvalue.
+
+Programs used in our experiments:
+
+Python 2.5.1
+Bowtie 0.10.0.2 (Bowtie must be in your PATH)
+
+Data files used:
+SNP calls: Pilot 2 SNP calls from CEU.  
+http://hgdownload.cse.ucsc.edu/goldenPath/hg18/database/knownGene.txt.gz Nov 2009.
+Gene locations: UCSC GoldenPath.  
+http://hgdownload.cse.ucsc.edu/goldenPath/hg18/database/knownGene.txt.gz  May 2009.
+Human Reference: Standard HG18 without additional haplotypes
+
+The actual pipeline driver is a makefile run by make in the directory
+containing the read files: make -f <path to>/PIPELINE.mk.  That directory must also
+contain directories called AltRefFather and AltRefMother, which
+contain the haplotype references formatted for bowtie.
+
+Make sure to edit PIPELINE.mk to set the variables as the top of the file,
+especially BASE.
+
+Main output Files:
+counts.txt: Contains count information for all heterozygous SNP locations.
+interestingHets.txt:  This file contains information about all SNP locations that passed
+all these tests:
+ - in a binding site
+ - within range for cnv test
+ - significantly assymetric by FDR test
+
