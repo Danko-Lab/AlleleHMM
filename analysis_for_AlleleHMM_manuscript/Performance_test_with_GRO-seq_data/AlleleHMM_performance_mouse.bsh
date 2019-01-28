@@ -231,6 +231,6 @@ python sum_of_counts.py counts_${j}_5head_distance_toclosest-dReg_Counts.txt `aw
 done
 
 
-### make figures
+### make figures (Sup_Fig1B,C)
 R --vanilla --slave --args $(pwd) "counts_hmm_regions_t*_interestingHets_5head_distance_toclosest-dReg_AccumulateCounts.txt" counts_hmm_regions_tX_interestingHets_5head_distance_toclosest-dReg_AccumulateCounts.pdf counts_hmm_regions_tX_interestingHets_5head_distance_toclosest-dReg_At5Kb.pdf < getFractionOfBlock_DistanceToNearestSites.R
 

@@ -121,4 +121,4 @@ done
 done
 
 
-## run AlleleHMM_Performamce_GRO-seq.R
+## run AlleleHMM_Performamce_GRO-seq.R to examine sensitivity, precision and specificity
