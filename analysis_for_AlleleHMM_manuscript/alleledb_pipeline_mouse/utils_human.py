@@ -6,8 +6,8 @@ def myFormat(sep, lst):
 
 def makeMappers(maptmplt):
     mappers={}
-    req_cs=[str(c) for c in range(1,20)]
-    opt_cs=['X', 'Y', 'MT']
+    req_cs=[str(c) for c in range(1,23)]
+    opt_cs=['X', 'Y', 'M']
 
     for c in req_cs+opt_cs:
         f=maptmplt % c
