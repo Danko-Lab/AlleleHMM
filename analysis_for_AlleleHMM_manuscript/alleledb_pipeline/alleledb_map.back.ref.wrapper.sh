@@ -33,4 +33,4 @@ wait
 
 #### combine and liftOver
 echo "2-map.back.ref: combining and liftOver ..."
-liftOver <(cat ${BOWTIEFILE}.[1-9]_${MATPATERNAL}.bed ${BOWTIEFILE}.1[0-9]_${MATPATERNAL}.bed ${BOWTIEFILE}.2[0-2]_${MATPATERNAL}.bed ${BOWTIEFILE}.[XY]_${MATPATERNAL}.bed) ${CHAINFILE} ${BOWTIEFILE}.${MATPATERNAL}.map2ref.bed ${BOWTIEFILE}.${MATPATERNAL}.unmap2ref.log
+liftOver <(cat ${BOWTIEFILE}.[1-9]_${MATPATERNAL}.bed ${BOWTIEFILE}.1[0-9]_${MATPATERNAL}.bed ${BOWTIEFILE}.2[0-2]_${MATPATERNAL}.bed) ${CHAINFILE} ${BOWTIEFILE}.${MATPATERNAL}.map2ref.bed ${BOWTIEFILE}.${MATPATERNAL}.unmap2ref.log

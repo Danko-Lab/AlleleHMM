@@ -1,13 +1,7 @@
 ## allow cmd line arguments
 args=(commandArgs(TRUE))
-args=(commandArgs(TRUE))
-if(length(args)==0){
-    FDR.thresh = 0.05
-}else{
-    for(i in 1:length(args)){
-         eval(parse(text=args[[i]]))
-    }
-}
+setwd(args[1])
+FDR.thresh = as.numeric(args[2])
 
 ## start script here
 library(VGAM)
@@ -49,7 +43,7 @@ colnames(p.thresh)="p"
 cutoff <- function(x,y) sum(y<=x)
 
 ## calc fp from null and empirical counts
-fp <- function(w,p,p.thresh,distrib="binomial",rho = 0)
+fp <- function(w,p,p.thresh,distrib="binomial",rho=0)
 {
   ## doing the distribution; as.integer converts table entities to integers
   a=lapply(as.integer(w[,1]),function(x) seq(0,x))
