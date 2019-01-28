@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+use File::Basename;
+use Getopt::Long;
+use Pod::Usage;
+
+=head1 NAME
+
+bowtie2bed
+
+=head1 SYNOPSIS
+
+ bowtie2bed <sam> > file.bed
+   
+  INPUT (bowtie output) 
+  col1: read_name              
+  col2: strand
+  col3: chr
+  col4: position (1-based)
+  col5: read sequence
+  col6: read quality 
+  col7: ?
+  col8: info
+  
+  Convert sam to bed file with the 4th col the ID and sequence of the read separated by "#*o*#"
+  position here is  0based
+  OUTPUT is UNsorted:
+  col1: chr
+  col2: start(0based)
+  col3: end(1based)	
+  col4: ID#*o*#sequence#*o*#strand#*o*#score
+                
+  
+  Example:
+     bowtie2bed file.bowtie > file.bed
+  
+=head1 DESCRIPTION
+
+=cut
+
+#option variables
+my $help;
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('h'=>\$help) || scalar(@ARGV)!=1)
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+## input file
+my $fn = shift;
+
+## variables
+my $fh; 
+my $header_processed = 0;
+my %sample2index;
+
+## read in file
+open($fh, "<$fn") || die "cannot open the file $fn!";
+while (my $l = <$fh>) {
+    chomp($l);
+   
+    my @t = split(/\t/, $l);
+    
+    ## skip if no chromosome
+    next if ($t[2] eq "*");
+		
+		## chromosome
+		my $chr = $t[2];
+		
+		## length of sequence
+		my $len = length($t[4]);
+		
+		## pos
+		my $sta = $t[3];
+		my $end = $sta + $len;
+		
+		## ID
+		my $id = $t[0];
+		
+		## sequence
+		my $seq = $t[4];
+		
+		## strand
+		my $strand=$t[1];
+		
+		## sequence score
+		my $score = $t[5];
+		
+		## output
+		print "$chr\t$sta\t$end\t$id#*o*#$seq#*o*#$strand#*o*#$score\n";
+}
+
+
+###########################################################################################
+## subroutines
+###########################################################################################
+

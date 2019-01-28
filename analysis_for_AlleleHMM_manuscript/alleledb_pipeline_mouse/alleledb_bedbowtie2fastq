@@ -1,0 +1,98 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+use File::Basename;
+use Getopt::Long;
+use Pod::Usage;
+
+=head1 NAME
+
+bowtie2fastq
+
+=head1 SYNOPSIS
+
+ bedbowtie2fastq <bowtie> 
+ 
+   
+  Convert bed format that contains bowtie info (output of bowtie2bed) to fastq file 
+  
+  INPUT (bowtie output) 
+  col1: chr
+  col2: start(0based)
+  col3: end(1based)	
+  col4: ID#*o*#sequence#*o*#strand#*o*#score
+  
+  but it doesnt require the first 3 columns; it requires only the 4th.
+  
+  OUTPUT
+  fastq
+  
+  Example:
+     bedbowtie2fastq file.bed | gzip -c > file.fastq.gz
+  
+=head1 DESCRIPTION
+
+=cut
+
+#option variables
+my $help;
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('h'=>\$help) || scalar(@ARGV)!=1)
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+## input file
+my $fn = shift;
+
+## variables
+my $fh; 
+my %reads2seq;
+my %reads2strand;
+my %reads2score;
+
+## read in file
+open($fh, "<$fn") || die "cannot open the file $fn!";
+while (my $l = <$fh>) {
+    chomp($l);
+   
+    my @t = split(/\t/, $l);
+        
+		
+		#my $chr = $t[0];
+		#my $sta = $t[1];
+		#my $end = $t[2];
+		
+		my @u = split(/\#\*o\*\#/, $t[3]);
+		my $id = $u[0];
+		my $seq = $u[1];
+		my $strand=$u[2];
+		my $score = $u[3];
+		
+		$reads2seq{$id} = $seq;
+		$reads2score{$id} = $score;
+}
+
+### print
+for my $ID (sort keys %reads2seq)
+{
+	print "\@$ID\n$reads2seq{$ID}\n+\n$reads2score{$ID}\n";
+}
+
+
+
+###########################################################################################
+## subroutines
+###########################################################################################
+

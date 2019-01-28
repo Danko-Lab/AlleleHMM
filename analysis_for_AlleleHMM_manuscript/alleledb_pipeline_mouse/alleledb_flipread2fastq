@@ -1,0 +1,409 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+use File::Basename;
+use Getopt::Long;
+use Pod::Usage;
+
+=head1 NAME
+
+flipread2fastq
+
+=head1 SYNOPSIS
+
+ flipread2fastq -s <int> <modbed> > <fastq>
+ 
+   
+  <modbed>
+  col1:chr with prefix chr
+  col2:start 0-based
+  col3:end 1-based
+  col4:read ID and sequence and strand and quality scores, separated by "#*o*#"
+  col5:chr with prefix chr(SNV)
+  col6:start 0-based (SNV)
+  col7:end 1-based (SNV)
+  col8:alleles (SNV)
+  
+  -s the number of SNVs that a read can overlap; default 1, up to 2 for now.
+  -q default 0; 1, suppress output print summary stats of number of reads (col2) overlapping number of SNVs (col1)
+  
+  output is:
+  <fastq>
+  firstline: @<read ID>
+  secondline: read sequence
+  thirdline: +
+  fourthline: rep('<', length of read sequence)            
+
+	this script also contains sections for analyses only, counting how many SNVs a read overlap
+	--analyses showed that reads overlapping 1 and 2 SNVs take up >99% of the reads that overlap SNVs
+	--hence script does not assess reads that overlap >2 SNVs to reduce complexity
+	--this is a hard code; need to rewrite to scale up
+	
+	this script assumes SNV; 1 nucleotide flip in the read
+	--if there are 2 SNVs, all combinations (in total 4-1 the original read = 3) are generated
+	--removes triallelic/quadrallelic SNVs 
+		(IDs of reads with 1 tri-/quadrallelic SNV can be found in removedReads.log)
+		(IDs of reads with both of 2 tri-/quadrallelic SNVs can be found in taggedReads.log)
+	--removes reads of different length from the sequence, due to mapping
+		(IDs of these reads are in lengthInconsistentReads.log)
+		
+  Example:
+     flipread2fastq -s 2 file.txt > file.fastq
+  
+=head1 DESCRIPTION
+
+=cut
+
+#option variables
+my $help;
+my $readsnv = 1;
+my $quiet = 0;
+
+#initialize options
+Getopt::Long::Configure ('bundling');
+
+if(!GetOptions ('h'=>\$help, 's=i'=>\$readsnv, 'q=i'=>\$quiet) || scalar(@ARGV)!=1)
+{
+    if ($help)
+    {
+        pod2usage(-verbose => 2);
+    }
+    else
+    {
+        pod2usage(1);
+    }
+}
+
+## input file
+my $fn = shift;
+
+########## variables
+if($readsnv != 1 && $readsnv !=2)
+{ 
+	die "option -s has to be an integer!:$!"; 
+}
+
+my $fh;
+my %read2snps;
+my %read2newread;
+my %read2quality;
+my $newread = '';
+my @readsRemoved;
+my @readsTagged;
+my @readsLengthInconsistent;
+my %read2line;
+my $debug1=0;
+my $debug2=0;
+my $totaluniq=0;
+my $debug4=0;
+
+########## read in file
+open($fh, "<$fn") || die "cannot open the file $fn!";
+while (my $line = <$fh>) {
+	    
+    chomp($line);
+		
+    my @tt = split(/\t/, $line);
+    			
+		## ID
+		my @hee = split(/\#\*o\*\#/,$tt[3]);
+		my $id = $hee[0];
+		my $seq = $hee[1];
+		
+		$read2quality{$id} = $hee[3];
+
+		## count number of snps a read overlaps
+		## if more than 2, skip read
+		if(!exists($read2snps{$id}))
+		{ 	
+			$read2snps{$id} = 1;
+			$read2line{$id}{$read2snps{$id}} = $line;	
+			
+		}
+		else
+		{	
+			$read2snps{$id}++;
+			$read2line{$id}{$read2snps{$id}} = $line;
+			#$debug4++;
+		}
+}
+
+my %numbertabs;
+for my $jm (sort keys %read2snps)
+{
+	$totaluniq++;
+	
+	if($quiet)
+	{
+		if(!exists($numbertabs{$read2snps{$jm}}))
+		{
+			$numbertabs{$read2snps{$jm}} = 1;
+		}
+		else
+		{
+			$numbertabs{$read2snps{$jm}}++;
+		}
+
+	}	
+	
+	if($read2snps{$jm} > $readsnv)
+	{
+			delete $read2snps{$jm};
+			delete $read2line{$jm};
+			#$debug2++;
+	}
+}
+
+if($quiet)
+{
+	for my $num (sort {$a <=> $b} keys %numbertabs)
+	{
+		my $prop = $numbertabs{$num} / $totaluniq;
+		print "$num\t$numbertabs{$num}\t$prop\n";
+	}
+	exit;
+}
+
+################### extract those reads that overlap only 1 and 2
+for my $readid ( sort keys %read2snps )
+{
+	$debug1++;
+	if($read2snps{$readid} > $readsnv){	die "READ $readid should not be in here since it has more than 2 SNVs!:!";	}
+	
+	# 1 SNV
+	if($read2snps{$readid} == 1)
+	{
+		my $l = $read2line{$readid}{1};
+	
+		my @t = split("\t", $l);
+    
+		## chr,pos
+		my $chr = $t[0];
+		my $sta = $t[1];
+		my $end = $t[2];
+		
+		## ID and sequence
+		my @he = split(/\#\*o\*\#/,$t[3]);
+		my $id = $he[0];
+		my $seq = $he[1];
+		
+		# check sequence length; if inconsistent, skip
+		if(($end-$sta) != length($seq))
+		{
+			push(@readsLengthInconsistent,$id);
+			next;
+		}
+		
+			
+		## SNV pos in read
+		my $snvend = $t[6];
+		my $allele = $t[7];
+		my $a1 = substr($t[7],0,1);
+		my $a2 = substr($t[7],1,1);
+		my $offset = $snvend - $sta - 1;
+		my $allele_in_read = substr($seq, $offset, 1);
+		
+		
+		##debug
+#		if($offset > length($seq))
+#		{
+#			my $jm = $end - $sta;
+#			print "$id|$seq|$offset|$jm JM\n"; ##debug
+#		}
+	
+	
+		## flip read
+		## see if matches the 2 alleles, otherwise remove triallelic quadallelic
+		if($allele_in_read eq $a1)
+		{
+			$newread = substr($seq,0,$offset).$a2.substr($seq,($offset+1),(length($seq)-$offset-1));
+		}
+		elsif($allele_in_read eq $a2)
+		{
+			$newread = substr($seq,0,$offset).$a1.substr($seq,($offset+1),(length($seq)-$offset-1));
+		}
+		else
+		{
+			push(@readsRemoved,$id);
+			next;
+		}
+		
+		$read2newread{$id}{$read2snps{$id}} = $newread;
+	}
+	else # 2 SNVs
+	{
+		my $l1 = $read2line{$readid}{1};
+	
+		my @t1 = split("\t", $l1);
+	    
+		## chr,pos
+		my $chr1 = $t1[0];
+		my $sta1 = $t1[1];
+		my $end1 = $t1[2];
+		
+		## ID and sequence
+		my @he1 = split(/\#\*o\*\#/,$t1[3]);
+		my $id1 = $he1[0];
+		my $seq1 = $he1[1];
+		
+		# check sequence length; if inconsistent, skip
+		if(($end1-$sta1) != length($seq1))
+		{
+			push(@readsLengthInconsistent,$id1);
+			next;
+		}
+		
+		## SNV pos in read
+		my $snvend1 = $t1[6];
+		my $allele1 = $t1[7];
+		my $a1_1 = substr($t1[7],0,1);
+		my $a2_1 = substr($t1[7],1,1);
+		my $offset1 = $snvend1 - $sta1 - 1;
+		my $allele_in_read1 = substr($seq1, $offset1, 1);
+		
+		## flip read
+		## see if matches the 2 alleles, otherwise remove triallelic quadallelic
+		if($allele_in_read1 eq $a1_1)
+		{
+			$newread = substr($seq1,0,$offset1).$a2_1.substr($seq1,($offset1+1),(length($seq1)-$offset1-1));
+		}
+		elsif($allele_in_read1 eq $a2_1)
+		{
+			$newread = substr($seq1,0,$offset1).$a1_1.substr($seq1,($offset1+1),(length($seq1)-$offset1-1));
+		}
+		else
+		{
+			push(@readsTagged,$id1);
+			next;
+		}
+		
+		$read2newread{$id1}{1} = $newread;
+		
+		
+		
+		#######################################################################
+		## 2nd SNV
+		my $l2 = $read2line{$readid}{2};
+	
+		my @t2 = split("\t", $l2);
+	    
+		## chr,pos
+		my $chr2 = $t2[0];
+		my $sta2 = $t2[1];
+		my $end2 = $t2[2];
+		
+		## ID and sequence
+		my @he2 = split(/\#\*o\*\#/,$t2[3]);
+		my $id2 = $he2[0];
+		my $seq2 = $he2[1];
+		
+		## SNV pos in read
+		my $snvend2 = $t2[6];
+		my $allele2 = $t2[7];
+		my $a1_2 = substr($t2[7],0,1);
+		my $a2_2 = substr($t2[7],1,1);
+		my $offset2 = $snvend2 - $sta2 - 1;
+		my $allele_in_read2 = substr($seq2, $offset2, 1);
+		
+		
+		## flip the other allele at the other SNV while maintaining original
+		## see if matches the 2 alleles, otherwise remove triallelic quadallelic
+		## seq1 and seq2 are original sequences
+		if($allele_in_read2 eq $a1_2)
+		{
+			$newread = substr($seq2,0,$offset2).$a2_2.substr($seq2,($offset2+1),(length($seq2)-$offset2-1));
+		}
+		elsif($allele_in_read2 eq $a2_2)
+		{
+			$newread = substr($seq2,0,$offset2).$a1_2.substr($seq2,($offset2+1),(length($seq2)-$offset2-1));
+		}
+		else
+		{
+			push(@readsTagged,$id2);
+			next;
+		}
+		
+		
+		$read2newread{$id2}{2} = $newread;
+		
+		
+		
+		## flip both alleles
+		## see if matches the 2 alleles, otherwise remove triallelic quadallelic
+		## seq1 and seq2 are original sequences
+		## id1 and id2 and readid are the same things
+		if($allele_in_read2 eq $a1_2)
+		{
+			$newread = substr($read2newread{$id2}{1},0,$offset2).$a2_2.substr($read2newread{$id2}{1},($offset2+1),(length($read2newread{$id2}{1})-$offset2-1));
+		}
+		elsif($allele_in_read2 eq $a2_2)
+		{
+			$newread = substr($read2newread{$id2}{1},0,$offset2).$a1_2.substr($read2newread{$id2}{1},($offset2+1),(length($read2newread{$id2}{1})-$offset2-1));
+		}
+		else
+		{
+			push(@readsTagged,$id2);
+		}
+		
+		
+		$read2newread{$id2}{3} = $newread;
+		
+	}
+	
+	
+}
+
+
+################### printing
+## output file
+my @ofilename;
+my $name;
+
+if($fn =~ /\./)
+{
+	@ofilename = split(/\./,$fn);
+	$name = join('.', @ofilename[0..($#ofilename - 1)]);
+}
+else
+{
+	$name = $fn;
+}
+
+my $removedfile = "$name.flipread.removedreads.log";
+my $taggedfile = "$name.flipread.taggedreads.log";
+my $lengthinconsistentfile = "$name.flipread.lengthinconsistentreads.log";
+open (REMOVED, ">$removedfile") || die "Cannot open $removedfile: $!";
+open (TAGGED, ">$taggedfile") || die "Cannot open $taggedfile: $!";
+open (LENGTHINCONSISTENT, ">$lengthinconsistentfile") || die "Cannot open $lengthinconsistentfile: $!";
+
+for my $read (@readsRemoved){	print REMOVED "$read\n";	}
+
+for my $read (@readsTagged){	print TAGGED "$read\n";	}
+
+for my $read (@readsLengthInconsistent){	print LENGTHINCONSISTENT "$read\n";	}
+
+close(REMOVED);
+close(TAGGED);
+close(LENGTHINCONSISTENT);
+
+for my $ID (sort keys %read2newread)
+{
+	for my $newread (sort keys %{$read2newread{$ID}})
+	{
+		my $item = $read2newread{$ID}{$newread};
+		my $newlength = length($item);
+		print "\@$ID\n$item\n+\n";
+		#print "<" x $newlength; print "\n";
+		
+		my $qual = $read2quality{$ID};
+		print "$qual\n";
+	}
+}
+
+#print $debug1."|$debug2|$totaluniq|$debug4\n";
+
+###########################################################################################
+## subroutines
+###########################################################################################
+
