@@ -1,4 +1,4 @@
-# Figure 5B, Fig 5C, Sup_Fig9
+# Figure 5B,C and Sup_Fig9
 # figure patameter
 # export  7.92 x 5.92 inches
 e_col= "red" #t_col("red", perc = 20)
@@ -7,9 +7,9 @@ par(mar=c(6.1, 7.1, 2.1, 2.1)) #d l u r 5.1, 4.1, 4.1, 2.1
 par(mgp=c(3,1,0))
 par(cex.lab=2.2, cex.axis=2.2)
 
-
+# Figure 5B
 # AlleleHMM Block size distribution
-setwd("~/Box Sync/Danko_lab_work/mouse_AlleleDB/GM12878/TssInBlocks/")
+#setwd("~/Box Sync/Danko_lab_work/mouse_AlleleDB/GM12878/TssInBlocks/")
 hist_of_HMM_block_from_bed6_solid <- function(m_all, p_all, add=F, col="blue",freq=F){
   mp_all = rbind.data.frame(m_all, p_all)
   mp_all$blockSize = mp_all$V3 - mp_all$V2
@@ -90,7 +90,7 @@ legend("topright",
 
 
 
-##sup_fig_8
+##sup_fig_9
 
 GM_m_all=read.table("SRR1552485_total/counts_minus_hmm_regions_t1e-05_interestingHets_IGV.bed")
 GM_p_all=read.table("SRR1552485_total/counts_plus_hmm_regions_t1e-05_interestingHets_IGV.bed")
@@ -135,4 +135,60 @@ legend("topright",
        fill=c("blue", "yellow")
        , bty = "n"
 )
+
+# Figure 5C
+
+## gene per block
+#setwd("~/Box Sync/Danko_lab_work/mouse_AlleleDB/GM12878/GeneInBlocks/")
+#GM12878
+m_withG=read.table("counts_minus_hmm_regions_t1e-05_interestingHets_IGV_genePerBlock.txt")
+p_withG=read.table("counts_plus_hmm_regions_t1e-05_interestingHets_IGV_genePerBlock.txt")
+Block_with_no_gene=4028-2-(dim(m_withG)[1] + dim(p_withG)[1])
+
+##SRR4041366_dedup_2
+Em_withG=read.table("SRR4041366_dedup_2/counts_minus_hmm_regions_t1e-05_interestingHets_IGV_genePerBlock.txt")
+Ep_withG=read.table("SRR4041366_dedup_2/counts_plus_hmm_regions_t1e-05_interestingHets_IGV_genePerBlock.txt")
+EBlock_with_no_gene= 3485-2-(dim(Em_withG)[1] + dim(Ep_withG)[1])
+
+hist(c(rep(0,Block_with_no_gene), m_withG$V1, p_withG$V1)
+     ,col= g_col
+     ,density=20,angle=45
+     , breaks = seq(-0.0001,200,1)
+     , freq = F
+     , xlim=c(0,20)
+     ,xlab="Number of genes in each HMM block"
+     ,main=" "
+     ,las=1
+    # , add=T
+)
+ 
+ hist(c(rep(0,EBlock_with_no_gene), Em_withG$V1, Ep_withG$V1)
+     , breaks = seq(-0.0001,200,1)
+     #,density=20,angle=135
+     , freq = F
+     , xlim=c(0,20)
+     #,ylim=c(0,0.6)
+     ,xlab="Number of genes in each HMM block"
+     ,main=""
+     ,col= e_col
+     ,add =T
+    
+)
+
+
+hist(c(rep(0,Block_with_no_gene), m_withG$V1, p_withG$V1)
+     ,col= g_col
+     ,density=20,angle=45
+     , breaks = seq(-0.0001,200,1)
+     , freq = F
+     , xlim=c(0,20)
+     ,xlab="Number of genes in each HMM block"
+     ,main=" "
+     , add=T
+)
+
+
+
+
+
 

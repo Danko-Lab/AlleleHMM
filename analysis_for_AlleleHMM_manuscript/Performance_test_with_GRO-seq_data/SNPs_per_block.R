@@ -6,7 +6,7 @@ par(cex.lab=2.2, cex.axis=2.2)
 par(bty = 'n') 
 par(mfrow=c(2,1)) 
 
-setwd("~/Box Sync/Danko_lab_work/mouse_AlleleDB/GM12878/SNPsInBlocks/")
+#setwd("~/Box Sync/Danko_lab_work/mouse_AlleleDB/GM12878/SNPsInBlocks/")
 F1_m=read.table(file = "SRR4041366_total_minus_regions_t1E-05.sorted_binomtest_SigBlocks_NoS.bedmappedSNP.txt", header = F)
 F1_p=read.table(file = "SRR4041366_total_plus_regions_t1E-05.sorted_binomtest_SigBlocks_NoS.bedmappedSNP.txt", header = F)
 F1=c(F1_m$V1, F1_p$V1)
@@ -29,8 +29,6 @@ summary(F1)
 #abline(v=log10(median(F1)), col="blue", lwd=4, lty=2)
 
 #summary(F1)
-
-
 
 
 
