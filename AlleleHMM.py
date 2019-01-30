@@ -107,23 +107,26 @@ input_i, input_p, input_m= i,p,m
 # combine plus strand and minus strand info for user
 if counts_minus_hmm == "-":
     mat  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-    total = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-    state = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+    pat  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[3], skiprows=1)
+    total = mat + pat
+    #total = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+    #state = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
 else:
     mat_1  = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-    total_1 = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-    state_1 = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+    pat_1 = np.loadtxt(counts_plus_hmm, dtype=int ,delimiter='\t', usecols=[3], skiprows=1)
+    #state_1 = np.loadtxt(counts_plus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
     mat_2  = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-    total_2 = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-    state_2 = np.loadtxt(counts_minus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+    pat_2 = np.loadtxt(counts_minus_hmm, dtype=int ,delimiter='\t', usecols=[3], skiprows=1)
+    #state_2 = np.loadtxt(counts_minus_hmm, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
     mat=np.concatenate((mat_1, mat_2))
-    total=np.concatenate((total_1, total_2))
-    state=np.concatenate((state_1, state_2))
+    pat=np.concatenate((pat_1, pat_2))
+    total = mat + pat
+    #state=np.concatenate((state_1, state_2))
 
-n_state = np.full(len(state), int(3), dtype=int)
-n_state[state=="M"] = 0
-n_state[state=="S"] = 1
-n_state[state=="P"] = 2
+#n_state = np.full(len(state), int(3), dtype=int)
+#n_state[state=="M"] = 0
+#n_state[state=="S"] = 1
+#n_state[state=="P"] = 2
 
 ###structure of hmm
 
@@ -338,19 +341,20 @@ f_data_dic={}
 def hmm_prediction(f_v, strand, t,new_T, new_P):
     #f_v = "counts_plus_hmm.txt"
     if f_v in f_data_dic:
-        data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v = f_data_dic[f_v]
+        data_v, chrom_v, snppos_v, mat_v, total_v = f_data_dic[f_v]
     else:
-        data_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=range(0,6), skiprows=1)
+        data_v = np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=range(0,4), skiprows=1)
         chrom_v=data_v[:,0] # np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[0], skiprows=1)
         snppos_v = data_v[:,1].astype(int) #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[1], skiprows=1)
-        mat_v  = data_v[:,2].astype(int)   #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
-        total_v = data_v[:,4].astype(int)  #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
-        state_v = data_v[:,5] #np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
-        n_state_v = np.full(len(state_v), int(3), dtype=int)
-        n_state_v[state_v=="M"] = 0
-        n_state_v[state_v=="S"] = 1
-        n_state_v[state_v=="P"] = 2
-        f_data_dic[f_v]=[data_v, chrom_v, snppos_v, mat_v, total_v, state_v, n_state_v]
+        mat_v = data_v[:,2].astype(int)   #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[2], skiprows=1)
+        pat_v = data_v[:,3].astype(int) 
+        total_v = mat_v + pat_v  #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[4], skiprows=1)
+        #state_v = data_v[:,5] #np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[5], skiprows=1)
+        #n_state_v = np.full(len(state_v), int(3), dtype=int)
+        #n_state_v[state_v=="M"] = 0
+        #n_state_v[state_v=="S"] = 1
+        #n_state_v[state_v=="P"] = 2
+        f_data_dic[f_v]=[data_v, chrom_v, snppos_v, mat_v, total_v]
     
     v_path=[]
     c_path=[]
