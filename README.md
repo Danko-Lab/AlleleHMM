@@ -55,16 +55,16 @@ AlleleHMM takes the allele-specific read counts file in the following formats, p
 + Please see examples in the input_file_examples folder.
 
     ```````
-    chrm    snppos  mat_allele_count        pat_allele_count        total_reads_count       state
-    chr1    565006  0       17      17      P
-    chr1    565286  46      0       46      M
-    chr1    565406  37      0       37      M
-    chr1    565419  31      0       31      M
-    chr1    565591  27      0       27      M
-    chr1    566573  0       2       2       S
-    chr1    568214  0       6       6       P
-    chr1    569094  93      0       93      M
-    chr1    569933  0       2       2       S
+    chrm    snppos  mat_allele_count        pat_allele_count 
+    chr1    565006  0       17      
+    chr1    565286  46      0 
+    chr1    565406  37      0 
+    chr1    565419  31      0
+    chr1    565591  27      0
+    chr1    566573  0       2
+    chr1    568214  0       6 
+    chr1    569094  93      0 
+    chr1    569933  0       2 
     ```````
 
 
