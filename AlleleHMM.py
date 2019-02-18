@@ -407,7 +407,7 @@ def run_em_T_mp_fixed(t, max_iter = ITER):
     new_P_list = [new_P]
     max_iter = max_iter
     for i in xrange(max_iter):
-        print "iteration",i
+        print "iteration",i, new_T, new_P, p_Y_f
         new_T, new_P, p_Y_f = em_interate_T_mp_fixed(new_T, new_P, x=mat, n=total)
         p_Y_f_list.append(p_Y_f)
         new_T_list.append(new_T)
