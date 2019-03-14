@@ -343,7 +343,7 @@ def hmm_prediction(f_v, strand, t,new_T, new_P):
     if f_v in f_data_dic:
         data_v, chrom_v, snppos_v, mat_v, total_v = f_data_dic[f_v]
     else:
-        data_v = np.array([l.strip().split("\t") for l in open(f_v).readlines()])
+        data_v = np.array([l.strip().split("\t") for l in open(f_v).readlines()[1:]])
         #np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=range(0,4), skiprows=1)
         chrom_v=data_v[:,0] # np.loadtxt(f_v, dtype=str ,delimiter='\t', usecols=[0], skiprows=1)
         snppos_v = data_v[:,1].astype(int) #np.loadtxt(f_v, dtype=int ,delimiter='\t', usecols=[1], skiprows=1)
