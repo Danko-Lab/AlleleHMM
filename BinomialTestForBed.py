@@ -29,7 +29,7 @@ binomtest_state=[]
 for i in xrange(len(mat)):
     p_value = binomtest(mat[i], total[i], 0.5)
     p_value_list.append(p_value)
-    if p_value <= 0.05:
+    if p_value <= 0.05: #and ((hmm_states[i]== 'M' and mat[i] > pat[i]) or (hmm_states[i]== 'P' and mat[i] < pat[i])):
         binomtest_state.append(hmm_states[i])
     else:
         binomtest_state.append('S')
