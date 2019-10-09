@@ -212,7 +212,7 @@ python BinomialTestForBed.py ${j}.merged_cov.bed ${j}_binomtest.bed
 rm ${j}.merged_cov.bed
 
 python FalsePosForBed.py ${j}_binomtest.bed ${FDR_SIMS} ${FDR_CUTOFF} > ${j}_binomtest_FDR.txt
-awk 'NR==1 { print $0 } NR>1 && $9 <= thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}_binomtest_FDR.txt) < ${j}_binomtest.bed | awk '($4 != "S") {print $0}' > ${j}_binomtest_SigBlocks.bed
+awk 'NR==1 { print $0 } NR>1 && ($9+0) <= thresh { print $0 }'  thresh=$(awk 'END {print $6}' ${j}_binomtest_FDR.txt) < ${j}_binomtest.bed | awk '($4 != "S") {print $0}' > ${j}_binomtest_SigBlocks.bed
 
 
 
